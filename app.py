@@ -31,7 +31,6 @@ def tasks ():
 	a2="active"
 	return render_template('index.html',a2=a2,todos=todos_l,t=title,h=heading)
 
-
 @app.route("/completed")
 def completed ():
 	#Display the Completed Tasks
