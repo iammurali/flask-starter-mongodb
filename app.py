@@ -28,7 +28,7 @@ def machineOn():
 
 	print(machine)
 
-	return "bugs"
+	return machine
 
 @app.route("/OFF")
 def machineOff():
