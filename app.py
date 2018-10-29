@@ -3,8 +3,10 @@ from pymongo import MongoClient # Database connector
 from bson.objectid import ObjectId # For ObjectId to work
 
 client = MongoClient('localhost', 27017)    #Configure the connection to the database
-db = client.camp2016    #Select the database
+db = client.arduinoDb    #Select the database
 todos = db.todo #Select the collection
+machines = db.machines #collection for storing list of machines
+# machineTimings = db.machineTimings
 
 app = Flask(__name__)
 title = "TODO with Flask"
@@ -16,103 +18,40 @@ def redirect_url():
            request.referrer or \
            url_for('index')
 
-@app.route("/list")
-def lists ():
-	#Display the all Tasks
-	todos_l = todos.find()
-	a1="active"
-	return render_template('index.html',a1=a1,todos=todos_l,t=title,h=heading)
-
 @app.route("/")
-@app.route("/uncompleted")
-def tasks ():
-	#Display the Uncompleted Tasks
-	todos_l = todos.find({"done":"no"})
-	a2="active"
-	return render_template('index.html',a2=a2,todos=todos_l,t=title,h=heading)
-
-@app.route("/completed")
-def completed ():
-	#Display the Completed Tasks
-	todos_l = todos.find({"done":"yes"})
-	a3="active"
-	return render_template('index.html',a3=a3,todos=todos_l,t=title,h=heading)
-
-@app.route("/done")
-def done ():
-	#Done-or-not ICON
-	id=request.values.get("_id")
-	task=todos.find({"_id":ObjectId(id)})
-	if(task[0]["done"]=="yes"):
-		todos.update({"_id":ObjectId(id)}, {"$set": {"done":"no"}})
-	else:
-		todos.update({"_id":ObjectId(id)}, {"$set": {"done":"yes"}})
-	redir=redirect_url()	# Re-directed URL i.e. PREVIOUS URL from where it came into this one
-
-#	if(str(redir)=="http://localhost:5000/search"):
-#		redir+="?key="+id+"&refer="+refer
-
-	return redirect(redir)
-
-#@app.route("/add")
-#def add():
-#	return render_template('add.html',h=heading,t=title)
-
-@app.route("/action", methods=['POST'])
-def action ():
-	#Adding a Task
-	name=request.values.get("name")
-	desc=request.values.get("desc")
-	date=request.values.get("date")
-	pr=request.values.get("pr")
-	todos.insert({ "name":name, "desc":desc, "date":date, "pr":pr, "done":"no"})
-	return redirect("/list")
-
-@app.route("/remove")
-def remove ():
-	#Deleting a Task with various references
-	key=request.values.get("_id")
-	todos.remove({"_id":ObjectId(key)})
-	return redirect("/")
-
-@app.route("/update")
-def update ():
-	id=request.values.get("_id")
-	task=todos.find({"_id":ObjectId(id)})
-	return render_template('update.html',tasks=task,h=heading,t=title)
-
-@app.route("/action3", methods=['POST'])
-def action3 ():
-	#Updating a Task with various references
-	name=request.values.get("name")
-	desc=request.values.get("desc")
-	date=request.values.get("date")
-	pr=request.values.get("pr")
-	id=request.values.get("_id")
-	todos.update({"_id":ObjectId(id)}, {'$set':{ "name":name, "desc":desc, "date":date, "pr":pr }})
-	return redirect("/")
-
-@app.route("/search", methods=['GET'])
-def search():
-	#Searching a Task with various references etc
-
-	key=request.values.get("key")
-	refer=request.values.get("refer")
-	if(key=="_id"):
-		todos_l = todos.find({refer:ObjectId(key)})
-	else:
-		todos_l = todos.find({refer:key})
-	return render_template('searchlist.html',todos=todos_l,t=title,h=heading)
-
-@app.route("/about")
-def about():
-	return render_template('credits.html',t=title,h=heading)
-
+def apiWelcome():
+	return "this is api for our aurdino"
 
 @app.route("/ON")
 def machineOn():
+	machine = machines.find_one({"machinename":"arduino123"})
+
+	print(machine)
+
+	return "bugs"
+
+@app.route("/OFF")
+def machineOff():
+	print("machine data recieved")
+	return "hello"	
+
+@app.route("/MACHINEPROBLEM")
+def machineProblem():
 	print("machine data recieved")
 	return "hello"
+
+@app.route("/IDLE")
+def machineIdle():
+	print("machine data recieved")
+	return "hello"
+
+@app.route("/createmachine")
+def createmachine():
+	print("machine data recieved")
+	hello = machines.insert_one({"machinename": "arduino124", "machineStaus": 0, "totalTimeOn": 0 })
+	print(hello.inserted_id)
+	return "hello"
+
 
 if __name__ == "__main__":
     app.run(debug=True)
