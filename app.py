@@ -47,20 +47,39 @@ def machineOff():
 		if "elapsedTime" in cursorMachine:
 			elapsedTime = cursorMachine["elapsedTime"] + time_difference_in_minutes
 			print(elapsedTime)
-			machines.update_one({"machinename":"arduino123"}, {"$set": {"elapsedTime":elapsedTime}}, upsert=True)
+			machines.update_one({"machinename":"arduino123"},
+			 {"$set": {"elapsedTime":elapsedTime}}, upsert=True)
 		return str(time_difference_in_minutes)	
 
 @app.route("/MACHINEPROBLEM")
 def machineProblem():
-	machines.update_one({"machinename":"arduino123"}, {"$set": {"machineStatus":3}}, upsert=True)
+	machines.update_one({"machinename":"arduino123"},
+	 {"$set": {"machineStatus":3}}, upsert=True)
 	print("machine data recieved")
 	return "hello"
+
+@app.route("/MACHINEPROBLEMSOLVED")
+def machineProblemSolved():
+	cursorMachine = machines.find_one({"machinename":"arduino123"})
+	if cursorMachine["machineStatus"] == 4 or cursorMachine["machineStatus"] == 1:		
+		machines.update_one({"machinename":"arduino123"}, 
+		{"$set": {"machineStatus":3}}, upsert=True)
+		print("machine data recieved")
+		return "Problem"
+
 
 @app.route("/IDLE")
 def machineIdle():
 	machines.update_one({"machinename":"arduino123"}, {"$set": {"machineStatus":4}}, upsert=True)
 	print("machine data recieved")
 	return "Machine idle"
+
+@app.route("/IDLEOFF")
+def machineIdleoff():
+	machines.update_one({"machinename":"arduino123"}, {"$set": {"machineStatus":4}}, upsert=True)
+	print("machine data recieved")
+	return "Machine idle"
+
 
 @app.route("/createmachine")
 def createmachine():
