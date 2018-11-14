@@ -35,46 +35,55 @@ def apiWelcome():
 
 @app.route("/ON")
 def machineOn():
-	machines.update_one({"machinename": "arduino123"}, {
-						"$set": {"startTime": now, "machineStaus": 1}}, upsert=True)
-	return "switched on"
+	orMachine = machines.find_one({"machinename": "Machine 1"})
+	if orMachine["machineStaus"] != 1:
+		machines.update_one({"machinename": "Machine 1"}, {
+							"$set": {"startTime": now, "machineStaus": 1}}, upsert=True)
+		return "switched on"
+	else:
+		return "already on"
 
 
 @app.route("/OFF")
 def machineOff():
-	orMachine = machines.find_one({"machinename": "arduino123"})
+	orMachine = machines.find_one({"machinename": "Machine 1"})
 	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "arduino123"}, {
-							"$set": {"stopTime": now, "machineStatus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "arduino123"})
+		machines.update_one({"machinename": "Machine 1"}, {
+							"$set": {"stopTime": now, "machineStaus": 0}}, upsert=True)
+		cursorMachine = machines.find_one({"machinename": "Machine 1"})
 		startTime = cursorMachine["startTime"]
 		print(startTime)
 		stopTime = cursorMachine["stopTime"]
 		time_difference = stopTime - startTime
+		print("hello" + str(time_difference))
 		time_difference_in_minutes = time_difference / timedelta(minutes=1)
-		print(time_difference_in_minutes)
+		print("time diff in minutes" + str(time_difference_in_minutes))
 		if "elapsedTime" in cursorMachine:
 			elapsedTime = cursorMachine["elapsedTime"] + \
 				time_difference_in_minutes
 			print(elapsedTime)
-			machines.update_one({"machinename": "arduino123"},
+			machines.update_one({"machinename": "Machine 1"},
 								{"$set": {"elapsedTime": elapsedTime}}, upsert=True)
-		return str(time_difference_in_minutes)
+			return str(elapsedTime)
+		else:
+			return "there is an error"
+	else:
+		return "machine already off"
 
 
 @app.route("/MACHINEPROBLEM")
 def machineProblem():
-	machines.update_one({"machinename": "arduino123"},
+	machines.update_one({"machinename": "Machine 1"},
 						{"$set": {"machineStatus": 3}}, upsert=True)
 	print("machine data recieved")
 	return "hello"
 
 
-@app.route("/MACHINEPROBLEMSOLVED")
+@app.route("/PROBLEMSOLVED")
 def machineProblemSolved():
-	cursorMachine = machines.find_one({"machinename": "arduino123"})
+	cursorMachine = machines.find_one({"machinename": "Machine 1"})
 	if cursorMachine["machineStatus"] == 4 or cursorMachine["machineStatus"] == 1:
-		machines.update_one({"machinename": "arduino123"},
+		machines.update_one({"machinename": "Machine 1"},
 							{"$set": {"machineStatus": 3}}, upsert=True)
 		print("machine data recieved")
 		return "Problem"
@@ -82,7 +91,7 @@ def machineProblemSolved():
 
 @app.route("/IDLE")
 def machineIdle():
-	machines.update_one({"machinename": "arduino123"}, {
+	machines.update_one({"machinename": "Machine 1"}, {
 						"$set": {"machineStatus": 4, "idleStart": now}}, upsert=True)
 	print("machine data recieved")
 	return "Machine idle"
@@ -90,9 +99,9 @@ def machineIdle():
 
 @app.route("/IDLEOFF")
 def machineIdleoff():
-	machines.update_one({"machinename": "arduino123"}, {
+	machines.update_one({"machinename": "Machine 1"}, {
 						"$set": {"machineStatus": 4, "idleStop":now}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "arduino123"})
+	cursorMachine = machines.find_one({"machinename": "Machine 1"})
 	startTime = cursorMachine["idleStart"]
 	print(startTime)
 	stopTime = cursorMachine["idleStop"]
@@ -103,9 +112,9 @@ def machineIdleoff():
 		elapsedTime = cursorMachine["idleTime"] + \
 			time_difference_in_minutes
 		print(elapsedTime)
-		machines.update_one({"machinename": "arduino123"},
+		machines.update_one({"machinename": "Machine 1"},
 							{"$set": {"idleTime": elapsedTime}}, upsert=True)
-		return "idle time" + str(time_difference_in_minutes)
+		return "idle time" + str(elapsedTime)
 	else:
 		return "no data yet"
 
@@ -113,7 +122,7 @@ def machineIdleoff():
 @app.route("/createmachine")
 def createmachine():
 	print("machine data recieved")
-	hello = machines.insert_one({"machinename": "arduino123", "machineStaus": 0,
+	hello = machines.insert_one({"machinename": "Machine 1", "machineStaus": 0,
 								 "totalTimeOn": 0, "elapsedTime": 0, "problemtime": 0, "idleTime": 0})
 	print(hello.inserted_id)
 	return "hello"
