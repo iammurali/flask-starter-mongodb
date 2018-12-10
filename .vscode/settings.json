@@ -1,0 +1,7 @@
+{
+    "python.jediEnabled": false,
+    "python.pythonPath": "/usr/bin/python3",
+    "python.linting.pylintEnabled": false,
+    "python.linting.enabled": true,
+    "git.ignoreLimitWarning": true
+}
