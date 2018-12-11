@@ -6,3 +6,5 @@ python app.py
 
 
 pip install -R requirements.txt
+
+ok
