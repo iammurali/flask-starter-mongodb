@@ -724,7 +724,8 @@ def machineIdlesv():
 
 
                    ##IDLEOFF REQUEST
-@app.route("/IDLEOFF")
+
+@app.route("/IDLEOFF") ##FOR MACHINE AIDA1 --IDLEOFF REQUEST(FIRST MACHINE)
 def machineIdleoff():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
@@ -768,7 +769,7 @@ def machineIdleoff():
 	else:
 		return "no data yet"
 
-@app.route("/IDLEOFFS")
+@app.route("/IDLEOFFS")##FOR MACHINE AIDA2 --IDLEOFF REQUEST(FIRST MACHINE)
 def machineIdleoffs():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
@@ -812,7 +813,7 @@ def machineIdleoffs():
 	else:
 		return "no data yet"
 
-
+                       ##create machines from database##
 @app.route("/createmachine")
 def createmachine():
 	currentTime = datetime.datetime.now()
@@ -824,6 +825,7 @@ def createmachine():
 	print(hello.inserted_id)
 	return "machine created"
 
+                    ##get data from app##
 
 @app.route("/mob/getmachines")
 def getmachinesfn():
