@@ -551,7 +551,7 @@ def machineProblemsv():
 	print(" 250SANES machine data recieved")
 	return "250SANES machine problem"
 
-
+                        #PROBLEM SOLVED REQUEST
 @app.route("/PROBLEMSOLVED")
 def machineProblemSolved():
 	currentTime = datetime.datetime.now()
