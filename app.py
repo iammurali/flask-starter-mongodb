@@ -552,7 +552,9 @@ def machineProblemsv():
 	return "250SANES machine problem"
 
                         #PROBLEM SOLVED REQUEST
-@app.route("/PROBLEMSOLVED")
+
+
+@app.route("/PROBLEMSOLVED") ##FOR MACHINE AIDA1 --PROBLEMSOLVED REQUEST(FIRST MACHINE)
 def machineProblemSolved():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
@@ -598,7 +600,9 @@ def machineProblemSolved():
 			return str(elapsedTime)
 		else:
 			return "there is an error"
-@app.route("/PROBLEMSOLVEDS")
+
+
+@app.route("/PROBLEMSOLVEDS")##FOR MACHINE AIDA2 --PROBLEMSOLVED REQUEST(SECOND MACHINE)
 def machineProblemSolveds():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
@@ -645,17 +649,20 @@ def machineProblemSolveds():
 		else:
 			return "there is an error IN AIDA 2"
 
-@app.route("/IDLE")
+
+                        #IDLE REQUEST
+
+@app.route("/IDLE") ##FOR MACHINE AIDA1 --IDLE REQUEST(FIRST MACHINE)
 def machineIdle():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
 	machines.update_one({"machinename": "AIDA 1"}, {
 						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved")
+	print("machine data recieved IN AIDA1")
 	return "Machine idle"
 
-@app.route("/IDLES")
+@app.route("/IDLES") ##FOR MACHINE AIDA2 --IDLE REQUEST(S-SECOND MACHINE)
 def machineIdles():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
@@ -665,7 +672,58 @@ def machineIdles():
 	print("machine data recieved IN AIDA2")
 	return "Machine idle IN AIDA 2"
 
+@app.route("/IDLET") ##FOR MACHINE AIDA3 --IDLE REQUEST(T-THIRD MACHINE)
+def machineIdlet():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "AIDA 3"}, {
+						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
+	print("machine data recieved IN AIDA3")
+	return "Machine idle"
 
+@app.route("/IDLEF") ##FOR MACHINE AIDA4 --IDLE REQUEST(F-FOURTH MACHINE)
+def machineIdlef():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "AIDA 4"}, {
+						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
+	print("machine data recieved IN AIDA4")
+	return "Machine idle IN AIDA4"
+
+@app.route("/IDLEFV") ##FOR MACHINE 350SANES--IDLE REQUEST(FV - FIFTH MACHINE)
+def machineIdlefv():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "350SANES"}, {
+						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
+	print("machine data recieved IN 350SANES")
+	return "Machine idle IN 350SANES"
+
+@app.route("/IDLESIX") ##FOR MACHINE DOBBY --IDLE REQUEST(SIX-SIXTH MACHINE)
+def machineIdlesix():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "DOBBY"}, {
+						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
+	print("machine data recieved IN DOBBY")
+	return "Machine idle IN DOBBY"
+
+@app.route("/IDLESV") ##FOR MACHINE 250SANES --IDLE REQUEST(SV-SEVENTH MACHINE)
+def machineIdlesv():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "250SANES"}, {
+						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
+	print("machine data recieved IN 250SANES")
+	return "Machine idle IN 250SANES"
+
+
+                   ##IDLEOFF REQUEST
 @app.route("/IDLEOFF")
 def machineIdleoff():
 	currentTime = datetime.datetime.now()
