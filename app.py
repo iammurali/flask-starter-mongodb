@@ -769,7 +769,7 @@ def machineIdleoff():
 	else:
 		return "no data yet"
 
-@app.route("/IDLEOFFS")##FOR MACHINE AIDA2 --IDLEOFF REQUEST(FIRST MACHINE)
+@app.route("/IDLEOFFS")##FOR MACHINE AIDA2 --IDLEOFF REQUEST(S-SECOND MACHINE)
 def machineIdleoffs():
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
@@ -809,9 +809,230 @@ def machineIdleoffs():
 			print(elapsedTime)
 			machines.update_one({"machinename": "AIDA 2"},
 							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time" + str(elapsedTime)
+		return "idle time from AIDA2" + str(elapsedTime)
 	else:
 		return "no data yet"
+
+@app.route("/IDLEOFFT")##FOR MACHINE AIDA3 --IDLEOFF REQUEST(T-THIRD MACHINE)
+def machineIdleofft():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "AIDA 3"}, {
+						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
+	cursorMachine = machines.find_one({"machinename": "AIDA 3"})
+	startTime = cursorMachine["idleStart"]
+	print(startTime)
+	stopTime = cursorMachine["idleStop"]
+	time_difference = stopTime - startTime
+	time_difference_in_minutes = time_difference / 60
+	print(time_difference_in_minutes)
+	time_difference_in_minutes = round(time_difference_in_minutes,2)
+	time_difference_in_percent = time_difference_in_minutes*100/450
+	time_difference_in_percent = round(time_difference_in_percent,2)
+	print(time_difference_in_percent)
+	if "idleTime" in cursorMachine:
+		if   16>currentTime >= 8:
+			elapsedTime = cursorMachine["idleTimeB"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "AIDA 3"},
+							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   24>currentTime >= 16:
+			elapsedTime = cursorMachine["idleTimeA"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "AIDA 3"},
+							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   8>currentTime >= 0:
+			elapsedTime = cursorMachine["idleTimeC"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "AIDA 3"},
+							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		return "idle time FROM AIDA3" + str(elapsedTime)
+	else:
+		return "no data yet"
+
+@app.route("/IDLEOFFF")##FOR MACHINE AIDA4 --IDLEOFF REQUEST(F-FOURTH MACHINE)
+def machineIdleofff():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "AIDA 4"}, {
+						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
+	cursorMachine = machines.find_one({"machinename": "AIDA 4"})
+	startTime = cursorMachine["idleStart"]
+	print(startTime)
+	stopTime = cursorMachine["idleStop"]
+	time_difference = stopTime - startTime
+	time_difference_in_minutes = time_difference / 60
+	print(time_difference_in_minutes)
+	time_difference_in_minutes = round(time_difference_in_minutes,2)
+	time_difference_in_percent = time_difference_in_minutes*100/450
+	time_difference_in_percent = round(time_difference_in_percent,2)
+	print(time_difference_in_percent)
+	if "idleTime" in cursorMachine:
+		if   16>currentTime >= 8:
+			elapsedTime = cursorMachine["idleTimeB"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "AIDA 4"},
+							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   24>currentTime >= 16:
+			elapsedTime = cursorMachine["idleTimeA"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "AIDA 4"},
+							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   8>currentTime >= 0:
+			elapsedTime = cursorMachine["idleTimeC"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "AIDA 4"},
+							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		return "idle time from AIDA4" + str(elapsedTime)
+	else:
+		return "no data yet from AIDA4"
+
+@app.route("/IDLEOFFFV")##FOR MACHINE 350SANES --IDLEOFF REQUEST(FV-350SANES MACHINE)
+def machineIdleofffv():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "350SANES"}, {
+						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
+	cursorMachine = machines.find_one({"machinename": "350SANES"})
+	startTime = cursorMachine["idleStart"]
+	print(startTime)
+	stopTime = cursorMachine["idleStop"]
+	time_difference = stopTime - startTime
+	time_difference_in_minutes = time_difference / 60
+	print(time_difference_in_minutes)
+	time_difference_in_minutes = round(time_difference_in_minutes,2)
+	time_difference_in_percent = time_difference_in_minutes*100/450
+	time_difference_in_percent = round(time_difference_in_percent,2)
+	print(time_difference_in_percent)
+	if "idleTime" in cursorMachine:
+		if   16>currentTime >= 8:
+			elapsedTime = cursorMachine["idleTimeB"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "350SANES"},
+							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   24>currentTime >= 16:
+			elapsedTime = cursorMachine["idleTimeA"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "350SANES"},
+							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   8>currentTime >= 0:
+			elapsedTime = cursorMachine["idleTimeC"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "350SANES"},
+							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		return "idle time from 350SANES" + str(elapsedTime)
+	else:
+		return "no data yet"
+@app.route("/IDLEOFFSIX")##FOR MACHINE DOBBY --IDLEOFF REQUEST(SIX-SIXTH MACHINE)
+def machineIdleoffsix():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "DOBBY"}, {
+						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
+	cursorMachine = machines.find_one({"machinename": "DOBBY"})
+	startTime = cursorMachine["idleStart"]
+	print(startTime)
+	stopTime = cursorMachine["idleStop"]
+	time_difference = stopTime - startTime
+	time_difference_in_minutes = time_difference / 60
+	print(time_difference_in_minutes)
+	time_difference_in_minutes = round(time_difference_in_minutes,2)
+	time_difference_in_percent = time_difference_in_minutes*100/450
+	time_difference_in_percent = round(time_difference_in_percent,2)
+	print(time_difference_in_percent)
+	if "idleTime" in cursorMachine:
+		if   16>currentTime >= 8:
+			elapsedTime = cursorMachine["idleTimeB"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "DOBBY"},
+							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   24>currentTime >= 16:
+			elapsedTime = cursorMachine["idleTimeA"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "DOBBY"},
+							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   8>currentTime >= 0:
+			elapsedTime = cursorMachine["idleTimeC"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "DOBBY"},
+							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		return "idle time from DOBBY" + str(elapsedTime)
+	else:
+		return "no data yet from DOBBY"
+		
+@app.route("/IDLEOFFSV")##FOR MACHINE 250SANES --IDLEOFF REQUEST(SV-SEVENTH MACHINE)
+def machineIdleoffsv():
+	currentTime = datetime.datetime.now()
+	currentTime = int(currentTime.strftime("%H"))
+	print(currentTime)
+	machines.update_one({"machinename": "250SANES"}, {
+						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
+	cursorMachine = machines.find_one({"machinename": "250SANES"})
+	startTime = cursorMachine["idleStart"]
+	print(startTime)
+	stopTime = cursorMachine["idleStop"]
+	time_difference = stopTime - startTime
+	time_difference_in_minutes = time_difference / 60
+	print(time_difference_in_minutes)
+	time_difference_in_minutes = round(time_difference_in_minutes,2)
+	time_difference_in_percent = time_difference_in_minutes*100/450
+	time_difference_in_percent = round(time_difference_in_percent,2)
+	print(time_difference_in_percent)
+	if "idleTime" in cursorMachine:
+		if   16>currentTime >= 8:
+			elapsedTime = cursorMachine["idleTimeB"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "250SANES"},
+							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   24>currentTime >= 16:
+			elapsedTime = cursorMachine["idleTimeA"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "250SANES"},
+							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		if   8>currentTime >= 0:
+			elapsedTime = cursorMachine["idleTimeC"] + \
+			time_difference_in_percent
+			elapsedTime = round(elapsedTime,2)
+			print(elapsedTime)
+			machines.update_one({"machinename": "250SANES"},
+							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+		return "idle time from 250SANES" + str(elapsedTime)
+	else:
+		return "no data yet"
+
+
 
                        ##create machines from database##
 @app.route("/createmachine")
