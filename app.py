@@ -28,7 +28,7 @@ def redirect_url():
 		url_for('index')
 
 
-@app.route("/")
+@app.route("/") #TESTING PART
 def apiWelcome():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
@@ -40,7 +40,7 @@ def apiWelcome():
 		return "this is api for our aurdino"
 
 
-@app.route("/ON") #FOR MACHINE AIDA1 --ON REQUEST
+@app.route("/ON") #FOR MACHINE AIDA1 --ON REQUEST(FIRST MACHINE)
 def machineOn():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
@@ -53,7 +53,7 @@ def machineOn():
 	else:
 		return "already on"
 
-@app.route("/ONS") #FOR MACHINE AIDA2 --ON REQUEST
+@app.route("/ONS") #FOR MACHINE AIDA2 --ON REQUEST(S-SECOND MACHINE)
 def machineOns():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
@@ -66,7 +66,7 @@ def machineOns():
 	else:
 		return "AIDA 2 already on"
 
-@app.route("/ONT") #FOR MACHINE AIDA3 --ON REQUEST
+@app.route("/ONT") #FOR MACHINE AIDA3 --ON REQUEST(T-THIRD MACHINE)
 def machineOnt():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
@@ -79,20 +79,20 @@ def machineOnt():
 	else:
 		return "AIDA 3 already on"
 
-@app.route("/ONF") #FOR MACHINE AIDA4 --ON REQUEST
+@app.route("/ONF") #FOR MACHINE AIDA4 --ON REQUEST(F-FOURTH MACHINE)
 def machineOnf():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
 	print(currentTime)
 	orMachine = machines.find_one({"machinename": "AIDA 4"})
 	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "AIDA 3"}, {
+		machines.update_one({"machinename": "AIDA 4"}, {
 							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
 		return "AIDA 4 switched on"
 	else:
 		return "AIDA 4 already on"
 
-@app.route("/ONFV") #FOR MACHINE 350SANES --ON REQUEST
+@app.route("/ONFV") #FOR MACHINE 350SANES --ON REQUEST(FV - FIFTH MACHINE)
 def machineOnfv():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
@@ -105,7 +105,7 @@ def machineOnfv():
 	else:
 		return "350SANES already on"
 
-@app.route("/ONSIX") #FOR MACHINE DOBBY --ON REQUEST
+@app.route("/ONSIX") #FOR MACHINE DOBBY --ON REQUEST(SIX - SIXth MACHINE)
 def machineOnsix():
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
@@ -117,6 +117,19 @@ def machineOnsix():
 		return "DOBBY switched on"
 	else:
 		return "DOBBY already on"
+
+@app.route("/ONSV") #FOR MACHINE  250SANES --ON REQUEST(SV-SEVENth MACHINE)
+def machineOnsv():
+	currentTime = datetime.datetime.now()
+	currentTime = currentTime.strftime("%H")
+	print(currentTime)
+	orMachine = machines.find_one({"machinename": "250SANES"})
+	if orMachine["machineStaus"] != 1:
+		machines.update_one({"machinename": "250SANES"}, {
+							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
+		return "250SANES switched on"
+	else:
+		return "250SANES already on"
 
 
 
