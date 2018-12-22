@@ -1,5 +1,5 @@
 # For flask implementation
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask,session ,render_template, request, redirect, url_for, jsonify
 from pymongo import MongoClient  # Database connector
 from bson.objectid import ObjectId  # For ObjectId to work
 from bson import Binary, Code
@@ -13,11 +13,12 @@ import time
 # Configure the connection to the database
 client = MongoClient('localhost', 27017)
 db = client.arduinoDb  # Select the database
-prevDate=0
+#prevDate=0
 
 machines = db.machines  # collection for storing list of machines
 machineTimings = db.machineTimings
 app = Flask(__name__)
+app.secret_key = "mys33cret"
 
 # modify=ObjectId()
 #now = datetime.datetime.now(pytz.timezone(TIME_ZONE))
@@ -25,16 +26,17 @@ now=round(time.time(),0)
 cdt =datetime.datetime
 
 currentDate = datetime.date.today()
+prevDate=datetime.date.fromordinal(datetime.date.today().toordinal()-1).strftime("%F")
 print(currentDate)
 print(prevDate)
-#if(currentDate != prevDate):
-#		prevDate = currentDate
-#		machines.update_one({"machinename": "AIDA 1"},
-#								{"$set": {"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0,}}, upsert=True)
-#		machines.update_one({"machinename": "AIDA 1"},
-#								{"$set": {"idleTimeB": 0,"idleTime": 0,"idleTimeC": 0,"idleTimeA": 0,}}, upsert=True)
-#		machines.update_one({"machinename": "AIDA 1"},
-#								{"$set": {"problemTimeB": 0,"problemTime": 0,"problemTimeC": 0,"problemTimeA": 0,}}, upsert=True)
+'''if(currentDate != prevDate):
+		prevDate = currentDate
+		machines.update_one({"machinename": "AIDA 1"},
+								{"$set": {"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0,}}, upsert=True)
+		machines.update_one({"machinename": "AIDA 1"},
+								{"$set": {"idleTimeB": 0,"idleTime": 0,"idleTimeC": 0,"idleTimeA": 0,}}, upsert=True)
+		machines.update_one({"machinename": "AIDA 1"},
+								{"$set": {"problemTimeB": 0,"problemTime": 0,"problemTimeC": 0,"problemTimeA": 0,}}, upsert=True)'''
 
 
 
@@ -54,110 +56,56 @@ def apiWelcome():
 	
                         #ON REQUEST
 
-@app.route("/ON") #FOR MACHINE AIDA1 --ON REQUEST(FIRST MACHINE)
-def machineOn():
+@app.route("/ON/<machineID>") 
+def machineOn(machineID):
+	print(machineID)
+	temptoday = datetime.date.today()
+	today = temptoday.strftime('%m/%d/%Y')
+	if 'existingDate' not in session:
+		print("from session loop",currentDate)
+		session['existingDate']= today	
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
 	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 1"})
+	currentDate = today
+	prevDate=session['existingDate']
+	orMachine = machines.find_one({"machinename": machineID})
+	print(currentDate,prevDate)
+	if(currentDate != prevDate):
+		session['existingDate']= currentDate
+		machines.update_one({"machinename": machineID},
+								{"$set": {"startTime": 0,"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0}}, upsert=True)
 	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "AIDA 1"}, {
+		machines.update_one({"machinename": machineID}, {
 							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
 		return "switched on"
 	else:
 		return "already on"
 
-@app.route("/ONS") #FOR MACHINE AIDA2 --ON REQUEST(S-SECOND MACHINE)
-def machineOns():
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 2"})
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "AIDA 2"}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		return "AIDA 2 switched on"
-	else:
-		return "AIDA 2 already on"
+                         #OFF REQUEST
 
-@app.route("/ONT") #FOR MACHINE AIDA3 --ON REQUEST(T-THIRD MACHINE)
-def machineOnt():
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 3"})
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "AIDA 3"}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		return "AIDA 3 switched on"
-	else:
-		return "AIDA 3 already on"
-
-@app.route("/ONF") #FOR MACHINE AIDA4 --ON REQUEST(F-FOURTH MACHINE)
-def machineOnf():
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 4"})
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "AIDA 4"}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		return "AIDA 4 switched on"
-	else:
-		return "AIDA 4 already on"
-
-@app.route("/ONFV") #FOR MACHINE 350SANES --ON REQUEST(FV - FIFTH MACHINE)
-def machineOnfv():
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "350SANES"})
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "350SANES"}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		return "350SANES switched on"
-	else:
-		return "350SANES already on"
-
-@app.route("/ONSIX") #FOR MACHINE DOBBY --ON REQUEST(SIX - SIXth MACHINE)
-def machineOnsix():
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "DOBBY"})
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "DOBBY"}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		return "DOBBY switched on"
-	else:
-		return "DOBBY already on"
-
-@app.route("/ONSV") #FOR MACHINE  250SANES --ON REQUEST(SV-SEVENth MACHINE)
-def machineOnsv():
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "250SANES"})
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": "250SANES"}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		return "250SANES switched on"
-	else:
-		return "250SANES already on"
-
-
-                          #OFF REQUEST
-
-@app.route("/OFF") #FOR MACHINE AIDA1 --OFF REQUEST(FIRST MACHINE)
-def machineOff():
+@app.route("/OFF/<machineID>")
+def machineOff(machineID):
+	temptoday = datetime.date.today()
+	today = temptoday.strftime('%m/%d/%Y')
+	if 'existingDate' not in session:
+		print("from session loop",currentDate)
+		session['existingDate']= today
+	currentDate = today
+	prevDate=session['existingDate']
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 1"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "AIDA 1"}, {
+	print(currentDate,prevDate)
+	cursorMachine = machines.find_one({"machinename": machineID})
+	if(currentDate != prevDate):
+		session['existingDate']= currentDate
+		machines.update_one({"machinename": machineID},
+								{"$set": {"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0,"stopTime": 0}}, upsert=True)
+	if cursorMachine["machineStaus"] != 0:
+		machines.update_one({"machinename": machineID}, {
 							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 1"})
+		cursorMachine = machines.find_one({"machinename": machineID})
 		startTime = cursorMachine["startTime"]
 		print(startTime)
 		stopTime = cursorMachine["stopTime"]
@@ -175,21 +123,21 @@ def machineOff():
 				time_difference_in_percent
 				elapsedTime = round(elapsedTime,2)
 				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 1"},
+				machines.update_one({"machinename": machineID},
 								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
 			elif   24>currentTime >= 16:
 				elapsedTime = cursorMachine["elapsedTimeA"] + \
 				time_difference_in_percent
 				elapsedTime = round(elapsedTime,2)
 				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 1"},
+				machines.update_one({"machinename": machineID},
 								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
 			elif   8>currentTime >= 0:
 				elapsedTime = cursorMachine["elapsedTimeC"] + \
 				time_difference_in_percent
 				elapsedTime = round(elapsedTime,2)
 				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 1"},
+				machines.update_one({"machinename": machineID},
 								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
 			return str(elapsedTime)
 		else:
@@ -197,386 +145,60 @@ def machineOff():
 	else:
 		return "machine already off IN AIDA1"
 
-@app.route("/OFFS") #FOR MACHINE AIDA2 --OFF REQUEST(S-SECOND MACHINE)
-def machineOffs():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 2"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "AIDA 2"}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 2"})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 2"},
-								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 2"},
-								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 2"},
-								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error IN AIDA2"
-	else:
-		return "machine already off IN AIDA2"
 
-@app.route("/OFFT") #FOR MACHINE AIDA3 --OFF REQUEST(T-THIRD MACHINE)
-def machineOfft():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 3"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "AIDA 3"}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 3"})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 3"},
-								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 3"},
-								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 3"},
-								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error IN AIDA3"
-	else:
-		return "machine already off IN AIDA3"
-
-@app.route("/OFFF") #FOR MACHINE AIDA4 --OFF REQUEST(F-FOURTH MACHINE)
-def machineOfff():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "AIDA 4"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "AIDA 4"}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 4"})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 4"},
-								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 4"},
-								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 4"},
-								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error IN AIDA4"
-	else:
-		return "machine already off IN AIDA4"
-
-@app.route("/OFFFV") #FOR MACHINE 350SANES --OFF REQUEST(FV-FIFTH MACHINE)
-def machineOfffv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "350SANES"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "350SANES"}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "350SANES"})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "350SANES"},
-								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "350SANES"},
-								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "350SANES"},
-								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error IN 350SANES"
-	else:
-		return "machine already off IN 350SANES"
-
-@app.route("/OFFSIX") #FOR MACHINE DOBBY --OFF REQUEST(SIX-SIXTH MACHINE)
-def machineOffsix():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "DOBBY"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "DOBBY"}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "DOBBY"})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "DOBBY"},
-								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "DOBBY"},
-								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "DOBBY"},
-								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error IN DOBBY"
-	else:
-		return "machine already off IN DOBBY"
-
-@app.route("/OFFSV") #FOR MACHINE 250SANES --OFF REQUEST(SV-SEVENTH MACHINE)
-def machineOffsv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": "250SANES"})
-	if orMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": "250SANES"}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "250SANES"})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "250SANES"},
-								{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "250SANES"},
-								{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "250SANES"},
-								{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error IN 250SANES"
-	else:
-		return "machine already off IN 250SANES"
 
                     #PROBLEM REQUEST
 
 
-@app.route("/PROBLEM") ##FOR MACHINE AIDA1 --PROBLEM REQUEST(FIRST MACHINE)
-def machineProblem():
+@app.route("/PROBLEM/<machineID>") 
+def machineProblem(machineID):
+	temptoday = datetime.date.today()
+	today = temptoday.strftime('%m/%d/%Y')
+	currentDate = today
+	if 'existingDate' not in session:
+		print("from session loop",currentDate)
+		session['existingDate']= today	
+	prevDate=session['existingDate']
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
-	machines.update_one({"machinename": "AIDA 1"},
+	orMachine = machines.find_one({"machinename": machineID})
+	if(currentDate != prevDate):
+		session['existingDate']= currentDate
+		machines.update_one({"machinename": machineID},
+								{"$set": {"problemtimeB":0,"problemtime": 0,"problemtimeA":0,"problemtimeC":0,"problemstartTime": 0}}, upsert=True)
+	if orMachine["machineStaus"] != 3:
+	    machines.update_one({"machinename": machineID},
 						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
 	print("machine data recieved")
 	return "machine problem"
 
-@app.route("/PROBLEMS") ##FOR MACHINE AIDA2 --PROBLEM REQUEST(S-SECOND MACHINE)
-def machineProblems():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 2"},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print(" AIDA 2 machine data recieved")
-	return "AIDA 2 machine problem"
-
-@app.route("/PROBLEMT") ##FOR MACHINE AIDA3 --PROBLEM REQUEST(T-THIRD MACHINE)
-def machineProblemt():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 3"},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print(" AIDA 3 machine data recieved")
-	return "AIDA 3 machine problem"
-
-@app.route("/PROBLEMF") ##FOR MACHINE AIDA4 --PROBLEM REQUEST(F-FOURTH MACHINE)
-def machineProblemf():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 4"},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print(" AIDA 4 machine data recieved")
-	return "AIDA 4 machine problem"
-
-@app.route("/PROBLEMFV") ##FOR MACHINE 350SANES --PROBLEM REQUEST(FV-FIFTH MACHINE)
-def machineProblemfv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "350SANES"},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print(" 350SANES machine data recieved")
-	return "350SANES machine problem"
-
-@app.route("/PROBLEMSIX") ##FOR MACHINE DOBBY --PROBLEM REQUEST(SIX-SIXTH MACHINE)
-def machineProblemsix():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "DOBBY"},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print(" DOBBY machine data recieved")
-	return "DOBBY machine problem"
-
-@app.route("/PROBLEMSV") ##FOR MACHINE 250SANES --PROBLEM REQUEST(SV-SEVENTH MACHINE)
-def machineProblemsv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "250SANES"},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print(" 250SANES machine data recieved")
-	return "250SANES machine problem"
 
                         #PROBLEM SOLVED REQUEST
 
 
-@app.route("/PROBLEMSOLVED") ##FOR MACHINE AIDA1 --PROBLEMSOLVED REQUEST(FIRST MACHINE)
-def machineProblemSolved():
+@app.route("/PROBLEMSOLVED/<machineID>") 
+def machineProblemSolved(machineID):
+	temptoday = datetime.date.today()
+	today = temptoday.strftime('%m/%d/%Y')
+	if 'existingDate' not in session:
+		print("from session loop",currentDate)
+		session['existingDate']= today
+	currentDate = today
+	prevDate=session['existingDate']
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "AIDA 1"})
+	print(currentDate,prevDate)
+	cursorMachine = machines.find_one({"machinename": machineID})
+	if(currentDate != prevDate):
+		session['existingDate']= currentDate
+		machines.update_one({"machinename": machineID},
+								{"$set": {"problemstopTime":0,"problemtimeB": 0,"problemtime": 0,"problemtimeA": 0,"problemtimeC": 0}}, upsert=True)
 	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "AIDA 1"}, {
+		machines.update_one({"machinename": machineID}, {
                             "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 1"})
+		cursorMachine = machines.find_one({"machinename": machineID})
 		startTime = cursorMachine["problemstartTime"]
 		print(startTime)
 		stopTime = cursorMachine["problemstopTime"]
@@ -594,394 +216,82 @@ def machineProblemSolved():
 				time_difference_in_percent
 				elapsedTime = round(elapsedTime,2)
 				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 1"},
+				machines.update_one({"machinename": machineID},
 								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
 			if   24>currentTime >= 16:
 				elapsedTime = cursorMachine["problemtimeA"] + \
 				time_difference_in_percent
 				elapsedTime = round(elapsedTime,2)
 				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 1"},
+				machines.update_one({"machinename": machineID},
 								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
 			if   8>currentTime >= 0:
 				elapsedTime = cursorMachine["problemtimeC"] + \
 				time_difference_in_percent
 				elapsedTime = round(elapsedTime,2)
 				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 1"},
+				machines.update_one({"machinename": machineID},
 								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
 			return str(elapsedTime)
 		else:
 			return "there is an error"
 
 
-@app.route("/PROBLEMSOLVEDS")##FOR MACHINE AIDA2 --PROBLEMSOLVED REQUEST(SECOND MACHINE)
-def machineProblemSolveds():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "AIDA 2"})
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "AIDA 2"}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 2"})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 2"},
-								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 2"},
-								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 2"},
-								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)
-		else:
-			return "there is an error IN AIDA 2"
-
-@app.route("/PROBLEMSOLVEDT")##FOR MACHINE AIDA3 --PROBLEMSOLVED REQUEST(T-THIRD MACHINE)
-def machineProblemSolvedt():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "AIDA 3"})
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "AIDA 3"}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 3"})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 3"},
-								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 3"},
-								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 3"},
-								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)
-		else:
-			return "there is an error IN AIDA 3"
-
-@app.route("/PROBLEMSOLVEDF")##FOR MACHINE AIDA4 --PROBLEMSOLVED REQUEST(F-FOURTH MACHINE)
-def machineProblemSolvedf():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "AIDA 4"})
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "AIDA 4"}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "AIDA 4"})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 4"},
-								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 4"},
-								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "AIDA 4"},
-								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)
-		else:
-			return "there is an error IN AIDA 4"
-
-@app.route("/PROBLEMSOLVEDFV")##FOR MACHINE 350SANES --PROBLEMSOLVED REQUEST(FV-FIFTH MACHINE)
-def machineProblemSolvedfv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "350SANES"})
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "350SANES"}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "350SANES"})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "350SANES"},
-								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "350SANES"},
-								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "350SANES"},
-								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)
-		else:
-			return "there is an error IN 350SANES"
-
-@app.route("/PROBLEMSOLVEDSIX")##FOR MACHINE DOBBY--PROBLEMSOLVED REQUEST(SIX-SIXTH MACHINE)
-def machineProblemSolvedsix():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "DOBBY"})
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "DOBBY"}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "DOBBY"})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "DOBBY"},
-								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "DOBBY"},
-								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "DOBBY"},
-								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)
-		else:
-			return "there is an error IN DOBBY"
-
-@app.route("/PROBLEMSOLVEDSV")##FOR MACHINE 250SANES --PROBLEMSOLVED REQUEST(SV-SEVENTH MACHINE)
-def machineProblemSolvedsv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": "250SANES"})
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": "250SANES"}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		cursorMachine = machines.find_one({"machinename": "250SANES"})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "250SANES"},
-								{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "250SANES"},
-								{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": "250SANES"},
-								{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)
-		else:
-			return "there is an error IN 250SANES"
 
 
 
                         #IDLE REQUEST
 
-@app.route("/IDLE") ##FOR MACHINE AIDA1 --IDLE REQUEST(FIRST MACHINE)
-def machineIdle():
+@app.route("/IDLE/<machineID>")
+def machineIdle(machineID):
+	temptoday = datetime.date.today()
+	today = temptoday.strftime('%m/%d/%Y')
+	if 'existingDate' not in session:
+		print("from session loop",currentDate)
+		session['existingDate']= today	
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
-	machines.update_one({"machinename": "AIDA 1"}, {
+	currentDate = today
+	prevDate=session['existingDate']
+	orMachine = machines.find_one({"machinename": machineID})
+	print(currentDate,prevDate)
+	if(currentDate != prevDate):
+		session['existingDate']= currentDate
+		machines.update_one({"machinename": machineID}, {
+						"$set": {"idleStart": 0,"idleStop":0,"idleTimeB": 0,"idleTimeA": 0,"idleTimeC": 0}}, upsert=True)
+	if orMachine["machineStaus"] != 4:
+	    machines.update_one({"machinename": machineID}, {
 						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
 	print("machine data recieved IN AIDA1")
 	return "Machine idle"
 
-@app.route("/IDLES") ##FOR MACHINE AIDA2 --IDLE REQUEST(S-SECOND MACHINE)
-def machineIdles():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 2"}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN AIDA2")
-	return "Machine idle IN AIDA 2"
 
-@app.route("/IDLET") ##FOR MACHINE AIDA3 --IDLE REQUEST(T-THIRD MACHINE)
-def machineIdlet():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 3"}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN AIDA3")
-	return "Machine idle"
-
-@app.route("/IDLEF") ##FOR MACHINE AIDA4 --IDLE REQUEST(F-FOURTH MACHINE)
-def machineIdlef():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 4"}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN AIDA4")
-	return "Machine idle IN AIDA4"
-
-@app.route("/IDLEFV") ##FOR MACHINE 350SANES--IDLE REQUEST(FV - FIFTH MACHINE)
-def machineIdlefv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "350SANES"}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN 350SANES")
-	return "Machine idle IN 350SANES"
-
-@app.route("/IDLESIX") ##FOR MACHINE DOBBY --IDLE REQUEST(SIX-SIXTH MACHINE)
-def machineIdlesix():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "DOBBY"}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN DOBBY")
-	return "Machine idle IN DOBBY"
-
-@app.route("/IDLESV") ##FOR MACHINE 250SANES --IDLE REQUEST(SV-SEVENTH MACHINE)
-def machineIdlesv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "250SANES"}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN 250SANES")
-	return "Machine idle IN 250SANES"
 
 
                    ##IDLEOFF REQUEST
 
-@app.route("/IDLEOFF") ##FOR MACHINE AIDA1 --IDLEOFF REQUEST(FIRST MACHINE)
-def machineIdleoff():
+@app.route("/IDLEOFF/<machineID>")
+def machineIdleoff(machineID):
+	temptoday = datetime.date.today()
+	today = temptoday.strftime('%m/%d/%Y')
+	if 'existingDate' not in session:
+		print("from session loop",currentDate)
+		session['existingDate']= today	
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
-	machines.update_one({"machinename": "AIDA 1"}, {
+	currentDate = today
+	prevDate=session['existingDate']
+	cursorMachine = machines.find_one({"machinename": machineID})
+	if(currentDate != prevDate):
+		session['existingDate']= currentDate
+		machines.update_one({"machinename": machineID}, {
+						"$set": {"idleStop": 0,"idleTimeB": 0,"idleTimeA": 0,"idleTimeC": 0,"idleStart":0}}, upsert=True)
+	if cursorMachine["machineStaus"] != 5:
+		machines.update_one({"machinename": machineID}, {
 						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "AIDA 1"})
+	cursorMachine = machines.find_one({"machinename": machineID})
 	startTime = cursorMachine["idleStart"]
 	print(startTime)
 	stopTime = cursorMachine["idleStop"]
@@ -998,299 +308,35 @@ def machineIdleoff():
 			time_difference_in_percent
 			elapsedTime = round(elapsedTime,2)
 			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 1"},
+			machines.update_one({"machinename": machineID},
 							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
 		if   24>currentTime >= 16:
 			elapsedTime = cursorMachine["idleTimeA"] + \
 			time_difference_in_percent
 			elapsedTime = round(elapsedTime,2)
 			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 1"},
+			machines.update_one({"machinename": machineID},
 							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
 		if   8>currentTime >= 0:
 			elapsedTime = cursorMachine["idleTimeC"] + \
 			time_difference_in_percent
 			elapsedTime = round(elapsedTime,2)
 			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 1"},
+			machines.update_one({"machinename": machineID},
 							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
 		return "idle time" + str(elapsedTime)
 	else:
 		return "no data yet"
 
-@app.route("/IDLEOFFS")##FOR MACHINE AIDA2 --IDLEOFF REQUEST(S-SECOND MACHINE)
-def machineIdleoffs():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 2"}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "AIDA 2"})
-	startTime = cursorMachine["idleStart"]
-	print(startTime)
-	stopTime = cursorMachine["idleStop"]
-	time_difference = stopTime - startTime
-	time_difference_in_minutes = time_difference / 60
-	print(time_difference_in_minutes)
-	time_difference_in_minutes = round(time_difference_in_minutes,2)
-	time_difference_in_percent = time_difference_in_minutes*100/450
-	time_difference_in_percent = round(time_difference_in_percent,2)
-	print(time_difference_in_percent)
-	if "idleTime" in cursorMachine:
-		if   16>currentTime >= 8:
-			elapsedTime = cursorMachine["idleTimeB"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 2"},
-							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   24>currentTime >= 16:
-			elapsedTime = cursorMachine["idleTimeA"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 2"},
-							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   8>currentTime >= 0:
-			elapsedTime = cursorMachine["idleTimeC"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 2"},
-							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time from AIDA2" + str(elapsedTime)
-	else:
-		return "no data yet"
-
-@app.route("/IDLEOFFT")##FOR MACHINE AIDA3 --IDLEOFF REQUEST(T-THIRD MACHINE)
-def machineIdleofft():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 3"}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "AIDA 3"})
-	startTime = cursorMachine["idleStart"]
-	print(startTime)
-	stopTime = cursorMachine["idleStop"]
-	time_difference = stopTime - startTime
-	time_difference_in_minutes = time_difference / 60
-	print(time_difference_in_minutes)
-	time_difference_in_minutes = round(time_difference_in_minutes,2)
-	time_difference_in_percent = time_difference_in_minutes*100/450
-	time_difference_in_percent = round(time_difference_in_percent,2)
-	print(time_difference_in_percent)
-	if "idleTime" in cursorMachine:
-		if   16>currentTime >= 8:
-			elapsedTime = cursorMachine["idleTimeB"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 3"},
-							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   24>currentTime >= 16:
-			elapsedTime = cursorMachine["idleTimeA"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 3"},
-							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   8>currentTime >= 0:
-			elapsedTime = cursorMachine["idleTimeC"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 3"},
-							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time FROM AIDA3" + str(elapsedTime)
-	else:
-		return "no data yet"
-
-@app.route("/IDLEOFFF")##FOR MACHINE AIDA4 --IDLEOFF REQUEST(F-FOURTH MACHINE)
-def machineIdleofff():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "AIDA 4"}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "AIDA 4"})
-	startTime = cursorMachine["idleStart"]
-	print(startTime)
-	stopTime = cursorMachine["idleStop"]
-	time_difference = stopTime - startTime
-	time_difference_in_minutes = time_difference / 60
-	print(time_difference_in_minutes)
-	time_difference_in_minutes = round(time_difference_in_minutes,2)
-	time_difference_in_percent = time_difference_in_minutes*100/450
-	time_difference_in_percent = round(time_difference_in_percent,2)
-	print(time_difference_in_percent)
-	if "idleTime" in cursorMachine:
-		if   16>currentTime >= 8:
-			elapsedTime = cursorMachine["idleTimeB"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 4"},
-							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   24>currentTime >= 16:
-			elapsedTime = cursorMachine["idleTimeA"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 4"},
-							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   8>currentTime >= 0:
-			elapsedTime = cursorMachine["idleTimeC"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "AIDA 4"},
-							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time from AIDA4" + str(elapsedTime)
-	else:
-		return "no data yet from AIDA4"
-
-@app.route("/IDLEOFFFV")##FOR MACHINE 350SANES --IDLEOFF REQUEST(FV-350SANES MACHINE)
-def machineIdleofffv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "350SANES"}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "350SANES"})
-	startTime = cursorMachine["idleStart"]
-	print(startTime)
-	stopTime = cursorMachine["idleStop"]
-	time_difference = stopTime - startTime
-	time_difference_in_minutes = time_difference / 60
-	print(time_difference_in_minutes)
-	time_difference_in_minutes = round(time_difference_in_minutes,2)
-	time_difference_in_percent = time_difference_in_minutes*100/450
-	time_difference_in_percent = round(time_difference_in_percent,2)
-	print(time_difference_in_percent)
-	if "idleTime" in cursorMachine:
-		if   16>currentTime >= 8:
-			elapsedTime = cursorMachine["idleTimeB"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "350SANES"},
-							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   24>currentTime >= 16:
-			elapsedTime = cursorMachine["idleTimeA"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "350SANES"},
-							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   8>currentTime >= 0:
-			elapsedTime = cursorMachine["idleTimeC"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "350SANES"},
-							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time from 350SANES" + str(elapsedTime)
-	else:
-		return "no data yet"
-@app.route("/IDLEOFFSIX")##FOR MACHINE DOBBY --IDLEOFF REQUEST(SIX-SIXTH MACHINE)
-def machineIdleoffsix():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "DOBBY"}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "DOBBY"})
-	startTime = cursorMachine["idleStart"]
-	print(startTime)
-	stopTime = cursorMachine["idleStop"]
-	time_difference = stopTime - startTime
-	time_difference_in_minutes = time_difference / 60
-	print(time_difference_in_minutes)
-	time_difference_in_minutes = round(time_difference_in_minutes,2)
-	time_difference_in_percent = time_difference_in_minutes*100/450
-	time_difference_in_percent = round(time_difference_in_percent,2)
-	print(time_difference_in_percent)
-	if "idleTime" in cursorMachine:
-		if   16>currentTime >= 8:
-			elapsedTime = cursorMachine["idleTimeB"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "DOBBY"},
-							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   24>currentTime >= 16:
-			elapsedTime = cursorMachine["idleTimeA"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "DOBBY"},
-							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   8>currentTime >= 0:
-			elapsedTime = cursorMachine["idleTimeC"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "DOBBY"},
-							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time from DOBBY" + str(elapsedTime)
-	else:
-		return "no data yet from DOBBY"
-
-@app.route("/IDLEOFFSV")##FOR MACHINE 250SANES --IDLEOFF REQUEST(SV-SEVENTH MACHINE)
-def machineIdleoffsv():
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	machines.update_one({"machinename": "250SANES"}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-	cursorMachine = machines.find_one({"machinename": "250SANES"})
-	startTime = cursorMachine["idleStart"]
-	print(startTime)
-	stopTime = cursorMachine["idleStop"]
-	time_difference = stopTime - startTime
-	time_difference_in_minutes = time_difference / 60
-	print(time_difference_in_minutes)
-	time_difference_in_minutes = round(time_difference_in_minutes,2)
-	time_difference_in_percent = time_difference_in_minutes*100/450
-	time_difference_in_percent = round(time_difference_in_percent,2)
-	print(time_difference_in_percent)
-	if "idleTime" in cursorMachine:
-		if   16>currentTime >= 8:
-			elapsedTime = cursorMachine["idleTimeB"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "250SANES"},
-							{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   24>currentTime >= 16:
-			elapsedTime = cursorMachine["idleTimeA"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "250SANES"},
-							{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		if   8>currentTime >= 0:
-			elapsedTime = cursorMachine["idleTimeC"] + \
-			time_difference_in_percent
-			elapsedTime = round(elapsedTime,2)
-			print(elapsedTime)
-			machines.update_one({"machinename": "250SANES"},
-							{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-		return "idle time from 250SANES" + str(elapsedTime)
-	else:
-		return "no data yet"
-
-
 
                        ##create machines from database##
-@app.route("/createmachine")
-def createmachine():
+@app.route("/createmachine/<machineID>")
+def createmachine(machineID):
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
 	print(currentTime)
 	print("machine data recieved")
-	hello = machines.insert_one({"machinename": "AIDA 1", "machineStaus": 0,
+	hello = machines.insert_one({"machinename": machineID, "machineStaus": 0,
 								 "totalTimeOn": 0, "elapsedTime": 0,"idleTime": 0,"problemtime": 0, "elapsedTimeB": 0, "problemtimeB": 0, "idleTimeB": 0, "elapsedTimeA": 0, "problemtimeA": 0, "idleTimeA": 0, "elapsedTimeC": 0, "problemtimeC": 0, "idleTimeC": 0})
 	print(hello.inserted_id)
 	return "machine created"
