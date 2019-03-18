@@ -21,6 +21,8 @@ machineTimings = db.machineTimingspytho
 app = Flask(__name__)
 app.secret_key = "mys33cret"
 
+goin = 1
+
 # modify=ObjectId()
 #now = datetime.datetime.now(pytz.timezone(TIME_ZONE))
 now=round(time.time(),0)
@@ -31,6 +33,12 @@ print(nofmachines)
 #machinesID = machines.find({},{"machinename":1})
 machinesID = machines.distinct("machinename")
 print(machinesID)
+#if nofmachines > 0:
+#		for i in machinesID:
+#				print("am in")		
+#				machines.update_one({"machinename": i},
+#								{"$set": {"startTime": 0,"stopTime": 0,"problemstartTime": 0,"problemstopTime": 0,"idleStop": 0,"idleStart": 0,}}, upsert=True)
+
 currentDate = datetime.date.today()
 prevDate = currentDate
 currentTimes = 1
@@ -40,6 +48,12 @@ prevMinute = 1
 prevPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 prevPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 prevPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+presentPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+presentPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+presentPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+serverStart = 1
+
+fh = open("records.txt", "a")
 		
 def redirect_url():
 	return request.args.get('next') or \
@@ -49,83 +63,77 @@ def redirect_url():
 
 @app.route("/") #TESTING PART
 def apiWelcome():
+	global goin
+	goin = 0
+	#threadOne.join()
 	global prevDate
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
 	print(request.remote_addr)
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) +  "Just an empty request" + "\n")
+	goin = 1
 	return "this is api for our aurdino"
+	
 	
                         #ON REQUEST
 
 @app.route("/ON/<machineID>") 
 def machineOn(machineID):
+	global goin
+	goin = 0
+	#threadOne.join()
 	global currentDate
 	global prevPercent1
-	prevPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	#prevPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	#presentPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 	print(machineID)	
+	print(prevPercent1)
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
-	print(currentTime)
+	#print(currentTime)
 	orMachine = machines.find_one({"machinename": machineID})
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "ON " + machineID + "\n")
 	#print(currentDate,prevDate)
 	if orMachine["machineStaus"] != 1:
 		machines.update_one({"machinename": machineID}, {
 							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
+		goin = 1
 		return "switched on"
 	else:
+		goin = 1
 		return "already on"
+	
 
                          #OFF REQUEST
 
 @app.route("/OFF/<machineID>")
 def machineOff(machineID):
+	global goin
+	global prevPercent1
+	goin = 0
+	#threadOne.join()
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
+	#print(currentTime)
 	#print(currentDate,prevDate)
 	cursorMachine = machines.find_one({"machinename": machineID})
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "OFF " + machineID + "\n")
 	if cursorMachine["machineStaus"] != 0:
 		machines.update_one({"machinename": machineID}, {
 							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		'''cursorMachine = machines.find_one({"machinename": machineID})
-		startTime = cursorMachine["startTime"]
-		print(startTime)
-		stopTime = cursorMachine["stopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		if "elapsedTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["elapsedTimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"elapsedTimeB": elapsedTime/2,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   24>currentTime >= 16:
-				elapsedTime = cursorMachine["elapsedTimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"elapsedTimeA": elapsedTime/2,"elapsedTime": elapsedTime}}, upsert=True)
-			elif   8>currentTime >= 0:
-				elapsedTime = cursorMachine["elapsedTimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"elapsedTimeC": elapsedTime/2,"elapsedTime": elapsedTime}}, upsert=True)					
-			return str(elapsedTime)
-		else:
-			return "there is an error" '''
+		print(machinesID.index(machineID))
+		prevPercent1[machinesID.index(machineID) + 1] = 0
+		print(prevPercent1)
+	
+	
+		goin = 1
 	else:
+		goin = 1
 		return "machine already off IN AIDA1"
+	goin = 1
 
 
 
@@ -134,17 +142,24 @@ def machineOff(machineID):
 
 @app.route("/PROBLEM/<machineID>") 
 def machineProblem(machineID):
+	global goin
+	goin = 0
+	#threadOne.join()
 	global prevPercent2
-	prevPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	#prevPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
 	orMachine = machines.find_one({"machinename": machineID})
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "PROBLEM " + machineID + "\n")
 	if orMachine["machineStaus"] != 3:
 	    machines.update_one({"machinename": machineID},
 						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
 	print("machine data recieved")
+	goin = 1
 	return "machine problem"
+	
 
 
                         #PROBLEM SOLVED REQUEST
@@ -152,51 +167,29 @@ def machineProblem(machineID):
 
 @app.route("/PROBLEMSOLVED/<machineID>") 
 def machineProblemSolved(machineID):
+	global goin
+	global prevPercent2
+	goin = 0
+	#threadOne.join()
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
 	#print(currentDate,prevDate)
 	cursorMachine = machines.find_one({"machinename": machineID})
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "PROBLEMOFF " + machineID + "\n")
 	if cursorMachine["machineStaus"] != 2:
 		machines.update_one({"machinename": machineID}, {
                             "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		'''cursorMachine = machines.find_one({"machinename": machineID})
-		startTime = cursorMachine["problemstartTime"]
-		print(startTime)
-		stopTime = cursorMachine["problemstopTime"]
-		time_difference = stopTime - startTime
-		print("hello" + str(time_difference))
-		time_difference_in_minutes = time_difference / 60
-		print("time diff in minutes" + str(time_difference_in_minutes))
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "problemtime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["problemtimeB"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"problemtimeB": elapsedTime/2,"problemtime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["problemtimeA"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"problemtimeA": elapsedTime/2,"problemtime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["problemtimeC"] + \
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"problemtimeC": elapsedTime/2,"problemtime": elapsedTime}}, upsert=True)
-			return str(elapsedTime)'''
+		print(machinesID.index(machineID))
+		prevPercent2[machinesID.index(machineID) + 1] = 0
+		print(prevPercent2)
+		
+		goin = 1	
 	else:
+		goin = 1
 		return "there is an error"
+	
 
 
 
@@ -204,18 +197,25 @@ def machineProblemSolved(machineID):
 
 @app.route("/IDLE/<machineID>")
 def machineIdle(machineID):
+	global goin
+	goin = 0
+	#threadOne.join()
 	global prevPercent3
-	prevPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+	#prevPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
 	orMachine = machines.find_one({"machinename": machineID})
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "IDLE " + machineID + "\n")
 	#print(currentDate,prevDate)
 	if orMachine["machineStaus"] != 4:
 	    machines.update_one({"machinename": machineID}, {
 						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
 	print("machine data recieved IN AIDA1")
+	goin = 1
 	return "Machine idle"
+	
 
 
 
@@ -224,59 +224,38 @@ def machineIdle(machineID):
 
 @app.route("/IDLEOFF/<machineID>")
 def machineIdleoff(machineID):
+	global goin
+	global prevPercent3
+	goin = 0
+	#threadOne.join()
 	currentTime = datetime.datetime.now()
 	currentTime = int(currentTime.strftime("%H"))
 	print(currentTime)
 	cursorMachine = machines.find_one({"machinename": machineID})
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "IDLEOFF " + machineID + "\n")
 	if cursorMachine["machineStaus"] != 5:
 		machines.update_one({"machinename": machineID}, {
 						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-		'''cursorMachine = machines.find_one({"machinename": machineID})
-		startTime = cursorMachine["idleStart"]
-		print(startTime)
-		stopTime = cursorMachine["idleStop"]
-		time_difference = stopTime - startTime
-		time_difference_in_minutes = time_difference / 60
-		print(time_difference_in_minutes)
-		time_difference_in_minutes = round(time_difference_in_minutes,2)
-		time_difference_in_percent = time_difference_in_minutes*100/450
-		time_difference_in_percent = round(time_difference_in_percent,2)
-		print(time_difference_in_percent)
-		if "idleTime" in cursorMachine:
-			if   16>currentTime >= 8:
-				elapsedTime = cursorMachine["idleTimeB"] + 
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"idleTimeB": elapsedTime/2,"idleTime": elapsedTime}}, upsert=True)
-			if   24>currentTime >= 16:
-				elapsedTime = cursorMachine["idleTimeA"] + 
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"idleTimeA": elapsedTime/2,"idleTime": elapsedTime}}, upsert=True)
-			if   8>currentTime >= 0:
-				elapsedTime = cursorMachine["idleTimeC"] + 
-				time_difference_in_percent
-				elapsedTime = round(elapsedTime,2)
-				print(elapsedTime)
-				machines.update_one({"machinename": machineID},
-								{"$set": {"idleTimeC": elapsedTime/2,"idleTime": elapsedTime}}, upsert=True)
-			return "idle time" + str(elapsedTime)
-		else:
-			return "no data yet"
-		'''
+		print(machinesID.index(machineID))
+		prevPercent3[machinesID.index(machineID) + 1] = 0
+		print(prevPercent3)
+		
+	goin = 1
 
 
                        ##create machines from database##
 @app.route("/createmachine/<machineID>")
 def createmachine(machineID):
+	global goin
+	goin = 0
+	#threadOne.join()
 	global nofmachines
 	global machinesID
 	currentTime = datetime.datetime.now()
 	currentTime = currentTime.strftime("%H")
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + "machine created " + machineID + "\n")
 	print(currentTime)
 	print("machine created")
 	hello = machines.insert_one({"machinename": machineID, "machineStaus": 0,
@@ -287,168 +266,261 @@ def createmachine(machineID):
 	machinesID.append(machineID)
 	print(nofmachines)
 	print(machinesID)
+	goin = 1
 	return "machine created"
+	
 
                     ##get data from app##
 
 @app.route("/mob/getmachines")
 def getmachinesfn():
 	print("machine data recieved")
+	fh = open("records.txt", "a")
+	fh.writelines(str(datetime.datetime.now()) + " got machine data in mobile" + "\n")
 	machine = machines.find()
 	return dumps(machine)
 
 
 def checkDate():
-	time.sleep(1)
+	global goin
+	global serverStart
+	#time.sleep(1)
 	global prevPercent1, prevPercent2, prevPercent3
+	global presentPercent1, presentPercent2, presentPercent3
 	while True:
-		#print("hi")
-		global currentMinute
-		global prevMinute
-		global currentTimes
-		global prevTimes
-		global prevDate
+		if goin == 1:
+			#print("hi")
+			global currentMinute
+			global prevMinute
+			global currentTimes
+			global prevTimes
+			global prevDate
 
-		currentDate = datetime.date.today()
-		currentTimes = time.time()
-		currentMinute = time.strftime("%S")
-		currentTime = datetime.datetime.now()
-		currentTime = int(currentTime.strftime("%H"))
-		'''if(int(currentTimes) != int(prevTimes)):
-			print(currentTimes, prevTimes)
-			print("Current Date is :" , currentDate)
-			print("Previous Date is :" ,prevDate)
-			print(currentMinute)
-			prevTimes = currentTimes'''
-		if(currentDate != prevDate):
+			currentDate = datetime.date.today()
+			currentTimes = time.time()
+			currentMinute = time.strftime("%S")
+			currentTime = datetime.datetime.now()
+			currentTime = int(currentTime.strftime("%H"))
+			'''if(int(currentTimes) != int(prevTimes)):
+				print(currentTimes, prevTimes)
+				print("Current Date is :" , currentDate)
+				print("Previous Date is :" ,prevDate)
+				print(currentMinute)
+				prevTimes = currentTimes'''
+			if(currentDate != prevDate):
+				if nofmachines > 0:
+					for i in machinesID:
+						print("am in")		
+						machines.update_one({"machinename": i},
+												{"$set": {"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0,}}, upsert=True)
+						machines.update_one({"machinename": i},
+												{"$set": {"idleTimeB": 0,"idleTime": 0,"idleTimeC": 0,"idleTimeA": 0,}}, upsert=True)
+						machines.update_one({"machinename": i},
+												{"$set": {"problemtimeB": 0,"problemtime": 0,"problemtimeC": 0,"problemtimeA": 0,}}, upsert=True)
+				prevDate = currentDate
+
 			if nofmachines > 0:
+				#print("nofmachines : ", nofmachines)
+				presentPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+				presentPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+				presentPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+				y = 0
+				
 				for i in machinesID:
-					print("am in")		
-					machines.update_one({"machinename": i},
-											{"$set": {"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0,}}, upsert=True)
-					machines.update_one({"machinename": i},
-											{"$set": {"idleTimeB": 0,"idleTime": 0,"idleTimeC": 0,"idleTimeA": 0,}}, upsert=True)
-					machines.update_one({"machinename": i},
-											{"$set": {"problemtimeB": 0,"problemtime": 0,"problemtimeC": 0,"problemtimeA": 0,}}, upsert=True)
-			prevDate = currentDate
+					y = y + 1
+					cursorMachine = machines.find_one({"machinename": i})
+					#print("current cursor machine is :", cursorMachine)
+					
+					if cursorMachine["machineStaus"] == 1:
+						#starttime =  cursorMachine["startTime"]
+						#if starttime == 0:
+						#	machines.update_one({"machinename": cursorMachine}, {
+						#	"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
+							
+						runningTime = int(time.time() - cursorMachine["startTime"])
+						#print(runningTime)
+						time_difference_in_minutes = runningTime / 60
+						time_difference_in_minutes = round(time_difference_in_minutes,2)
+						#print(time_difference_in_minutes)
+						time_difference_in_percent1 = time_difference_in_minutes*100/450
+						time_difference_in_percent1 = round(time_difference_in_percent1,2)
+						presentPercent1[y] = time_difference_in_percent1
+						if(currentMinute != prevMinute):
+							#print("time diff in minutes" + str(time_difference_in_minutes))
+							#print("time diff in percent" , time_difference_in_percent1)
+							#print(cursorMachine)
+							#print(cursorMachine["startTime"])
+							#print("runningTime ", runningTime)
+							prevMinute = currentMinute
+						if(presentPercent1[y] != prevPercent1[y]):
+							print(runningTime)
+							print(time_difference_in_minutes)
+							if "elapsedTime" in cursorMachine:
+								if   16>currentTime >= 8:
+									#print("elapsedTimeB :", cursorMachine["elapsedTimeB"] )
+									if serverStart:
+										elapsedTime = presentPercent1[y]
+									else:
+										elapsedTime = cursorMachine["elapsedTimeB"] - prevPercent1[y] +\
+														time_difference_in_percent1
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
+								elif   24>currentTime >= 16:
+									#print("elapsedTimeA :", cursorMachine["elapsedTimeA"] )
+									if serverStart:
+										elapsedTime = presentPercent1[y]
+									else:
+										elapsedTime = cursorMachine["elapsedTimeA"]  - prevPercent1[y] + \
+													time_difference_in_percent1
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print("elapsedtime:", elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
+								elif   8>currentTime >= 0:
+									#print("elapsedTimeC :", cursorMachine["elapsedTimeC"] )
+									if serverStart:
+										elapsedTime = presentPercent1[y]
+									else:
+										elapsedTime = cursorMachine["elapsedTimeC"]  - prevPercent1[y] + \
+													time_difference_in_percent1
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
+							#print(elapsedTime , presentPercent1[y], prevPercent1[y], "hello" ,  time_difference_in_percent1 )
+							prevPercent1[y] = time_difference_in_percent1
+							
+					
+					if cursorMachine["machineStaus"] == 3:
+						#starttime =  cursorMachine["problemstartTime"]
+						#if starttime == 0:
+						#	machines.update_one({"machinename": cursorMachine}, {
+						#	"$set": {"problemstartTime": time.time(), "machineStaus": 3}}, upsert=True)
+						runningTime = time.time() - cursorMachine["problemstartTime"]
+						time_difference_in_minutes = runningTime / 60
+						time_difference_in_minutes = round(time_difference_in_minutes,2)
+						time_difference_in_percent2 = time_difference_in_minutes*100/450
+						time_difference_in_percent2 = round(time_difference_in_percent2,2)
+						#print(time_difference_in_percent2)
+						presentPercent2[y] = time_difference_in_percent2
+						if(presentPercent2[y] != prevPercent2[y]):
+							if "problemtime" in cursorMachine:
+								if   16>currentTime >= 8:
+									if serverStart:
+										elapsedTime = presentPercent2[y]
+									else:
+										elapsedTime = cursorMachine["problemtimeB"] - prevPercent2[y] + \
+														time_difference_in_percent2
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
+								if   24>currentTime >= 16:
+									if serverStart:
+										elapsedTime = presentPercent2[y]
+									else:
+										elapsedTime = cursorMachine["problemtimeA"] - prevPercent2[y] + \
+														time_difference_in_percent2
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
+								if   8>currentTime >= 0:
+									if serverStart:
+										elapsedTime = presentPercent2[y]
+									else:
+										elapsedTime = cursorMachine["problemtimeC"] - prevPercent2[y] + \
+														time_difference_in_percent2
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
+						prevPercent2[y] = time_difference_in_percent2
 
-		if nofmachines > 0:
-			#print("nofmachines : ", nofmachines)
-			presentPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-			presentPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-			presentPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-			y = 0
-			
-			for i in machinesID:
-				y = y + 1
-				cursorMachine = machines.find_one({"machinename": i})
-				
-				if cursorMachine["machineStaus"] == 1:
-					runningTime = int(time.time() - cursorMachine["startTime"])
-					time_difference_in_minutes = runningTime*1.0 / 60
-					time_difference_in_minutes = round(time_difference_in_minutes,2)
-					time_difference_in_percent1 = time_difference_in_minutes*100/450
-					time_difference_in_percent1 = round(time_difference_in_percent1,2)
-					presentPercent1[y] = time_difference_in_percent1
-					if(currentMinute != prevMinute):
-						print("time diff in minutes" + str(time_difference_in_minutes))
-						print("time diff in percent" , time_difference_in_percent1)
-						print(cursorMachine)
-						print(cursorMachine["startTime"])
-						print("runningTime ", runningTime)
-						prevMinute = currentMinute
-					if(presentPercent1[y] != prevPercent1[y]):
-						if "elapsedTime" in cursorMachine:
-							if   16>currentTime >= 8:
-								elapsedTime = cursorMachine["elapsedTimeB"] - prevPercent1[y] +\
-								time_difference_in_percent1
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-							elif   24>currentTime >= 16:
-								print("elapsedTimeA :", cursorMachine["elapsedTimeA"] )
-								elapsedTime = cursorMachine["elapsedTimeA"]  - prevPercent1[y] + \
-								time_difference_in_percent1
-								elapsedTime = round(elapsedTime,2)
-								print("elapsedtime:", elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-							elif   8>currentTime >= 0:
-								elapsedTime = cursorMachine["elapsedTimeC"]  - prevPercent1[y] + \
-								time_difference_in_percent1
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
-						prevPercent1[y] = time_difference_in_percent1
-				
-				if cursorMachine["machineStaus"] == 3:
-					runningTime = time.time() - cursorMachine["problemstartTime"]
-					time_difference_in_minutes = runningTime / 60
-					time_difference_in_minutes = round(time_difference_in_minutes,2)
-					time_difference_in_percent2 = time_difference_in_minutes*100/450
-					time_difference_in_percent2 = round(time_difference_in_percent2,2)
-					print(time_difference_in_percent2)
-					presentPercent2[y] = time_difference_in_percent2
-					if(presentPercent2[y] != prevPercent2[y]):
-						if "problemtime" in cursorMachine:
-							if   16>currentTime >= 8:
-								elapsedTime = cursorMachine["problemtimeB"] - prevPercent2[y] + \
-								time_difference_in_percent2
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-							if   24>currentTime >= 16:
-								elapsedTime = cursorMachine["problemtimeA"] - prevPercent2[y] + \
-								time_difference_in_percent2
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-							if   8>currentTime >= 0:
-								elapsedTime = cursorMachine["problemtimeC"] - prevPercent2[y] + \
-								time_difference_in_percent2
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
-					prevPercent2[y] = time_difference_in_percent2
-
-				if cursorMachine["machineStaus"] == 4:
-					runningTime = time.time() - cursorMachine["idleStart"]
-					time_difference_in_minutes = runningTime / 60
-					time_difference_in_minutes = round(time_difference_in_minutes,2)
-					time_difference_in_percent3 = time_difference_in_minutes*100/450
-					time_difference_in_percent3 = round(time_difference_in_percent3,2)
-					print(time_difference_in_percent3)
-					presentPercent3[y] = time_difference_in_percent3
-					if(presentPercent3[y] != prevPercent3[y]):
-						if "idleTime" in cursorMachine:
-							if   16>currentTime >= 8:
-								elapsedTime = cursorMachine["idleTimeB"] - prevPercent3[y] + \
-								time_difference_in_percent3
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-							if   24>currentTime >= 16:
-								elapsedTime = cursorMachine["idleTimeA"] - prevPercent3[y] + \
-								time_difference_in_percent3
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-							if   8>currentTime >= 0:
-								elapsedTime = cursorMachine["idleTimeC"] - prevPercent3[y] + \
-								time_difference_in_percent3
-								elapsedTime = round(elapsedTime,2)
-								print(elapsedTime)
-								machines.update_one({"machinename": i},
-												{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
-					prevPercent3[y] = time_difference_in_percent3
-
+					if cursorMachine["machineStaus"] == 4:
+						#starttime =  cursorMachine["idleStart"]
+						#if starttime == 0:
+						#	machines.update_one({"machinename": cursorMachine}, {
+						#	"$set": {"idleStart": time.time(), "machineStaus": 3}}, upsert=True)
+						runningTime = time.time() - cursorMachine["idleStart"]
+						time_difference_in_minutes = runningTime / 60
+						time_difference_in_minutes = round(time_difference_in_minutes,2)
+						time_difference_in_percent3 = time_difference_in_minutes*100/450
+						time_difference_in_percent3 = round(time_difference_in_percent3,2)
+						#print(time_difference_in_percent3)
+						presentPercent3[y] = time_difference_in_percent3
+						if(presentPercent3[y] != prevPercent3[y]):
+							if "idleTime" in cursorMachine:
+								if   16>currentTime >= 8:
+									if serverStart:
+										elapsedTime = presentPercent3[y]
+									else:
+										elapsedTime = cursorMachine["idleTimeB"] - prevPercent3[y] + \
+													time_difference_in_percent3
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+								if   24>currentTime >= 16:
+									if serverStart:
+										elapsedTime = presentPercent3[y]
+									else:
+										elapsedTime = cursorMachine["idleTimeA"] - prevPercent3[y] + \
+														time_difference_in_percent3
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+								if   8>currentTime >= 0:
+									if serverStart:
+										elapsedTime = presentPercent3[y]
+									else:
+										elapsedTime = cursorMachine["idleTimeC"] - prevPercent3[y] + \
+													time_difference_in_percent3
+									elapsedTime = round(elapsedTime,2)
+									if elapsedTime > 99.5:
+										elapsedTime = 100
+									if elapsedTime < 0:
+										elapsedTime = 0
+									#print(elapsedTime)
+									machines.update_one({"machinename": i},
+													{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
+						prevPercent3[y] = time_difference_in_percent3
+				serverStart = 0
 
 
 threadOne = threading.Thread(target=checkDate)
@@ -457,3 +529,4 @@ threadOne.start()
 app.run(host='0.0.0.0', port=8081)
 	
 # Careful with the debug mode..
+
