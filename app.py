@@ -33,11 +33,11 @@ print(nofmachines)
 #machinesID = machines.find({},{"machinename":1})
 machinesID = machines.distinct("machinename")
 print(machinesID)
-#if nofmachines > 0:
-#		for i in machinesID:
-#				print("am in")		
-#				machines.update_one({"machinename": i},
-#								{"$set": {"startTime": 0,"stopTime": 0,"problemstartTime": 0,"problemstopTime": 0,"idleStop": 0,"idleStart": 0,}}, upsert=True)
+if nofmachines > 0:
+		for i in machinesID:
+				print("am in")		
+				machines.update_one({"machinename": i},
+								{"$set": {"machineStaus": 0,}}, upsert=True)
 
 currentDate = datetime.date.today()
 prevDate = currentDate
@@ -52,7 +52,7 @@ presentPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 presentPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 presentPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 serverStart = 1
-
+sessionRunTime = 0
 fh = open("records.txt", "a")
 		
 def redirect_url():
@@ -132,7 +132,7 @@ def machineOff(machineID):
 		goin = 1
 	else:
 		goin = 1
-		return "machine already off IN AIDA1"
+		return "machine already off "
 	goin = 1
 
 
@@ -259,7 +259,7 @@ def createmachine(machineID):
 	print(currentTime)
 	print("machine created")
 	hello = machines.insert_one({"machinename": machineID, "machineStaus": 0,
-								 "totalTimeOn": 0, "elapsedTime": 0,"idleTime": 0,"problemtime": 0, "elapsedTimeB": 0, "problemtimeB": 0, "idleTimeB": 0, "elapsedTimeA": 0, "problemtimeA": 0, "idleTimeA": 0, "elapsedTimeC": 0, "problemtimeC": 0, "idleTimeC": 0})
+								 "totalTimeOn": 0, "elapsedTime": 0,"idleTime": 0,"problemtime": 0, "offtime": 0, "elapsedTimeB": 0, "problemtimeB": 0, "idleTimeB": 0, "offtimeB": 0, "elapsedTimeA": 0, "problemtimeA": 0, "idleTimeA": 0, "offtimeA": 0, "elapsedTimeC": 0, "problemtimeC": 0, "idleTimeC": 0, "offtimeC":0})
 	print(hello.inserted_id)
 	time.sleep(5)
 	nofmachines = nofmachines + 1
@@ -287,7 +287,14 @@ def checkDate():
 	#time.sleep(1)
 	global prevPercent1, prevPercent2, prevPercent3
 	global presentPercent1, presentPercent2, presentPercent3
+	sessionStartTime = time.time()
+	shiftChangeA = 1
+	shiftChangeB = 1
+	shiftChangeC = 1
 	while True:
+
+		
+		
 		if goin == 1:
 			#print("hi")
 			global currentMinute
@@ -295,12 +302,16 @@ def checkDate():
 			global currentTimes
 			global prevTimes
 			global prevDate
+			sessionRunTime = int(time.time() - sessionStartTime)
+			sessionRunMins = sessionRunTime/60
+			sessionRunPercent = round(sessionRunMins *100 / 450)
 
 			currentDate = datetime.date.today()
 			currentTimes = time.time()
 			currentMinute = time.strftime("%S")
 			currentTime = datetime.datetime.now()
 			currentTime = int(currentTime.strftime("%H"))
+			
 			'''if(int(currentTimes) != int(prevTimes)):
 				print(currentTimes, prevTimes)
 				print("Current Date is :" , currentDate)
@@ -317,6 +328,9 @@ def checkDate():
 												{"$set": {"idleTimeB": 0,"idleTime": 0,"idleTimeC": 0,"idleTimeA": 0,}}, upsert=True)
 						machines.update_one({"machinename": i},
 												{"$set": {"problemtimeB": 0,"problemtime": 0,"problemtimeC": 0,"problemtimeA": 0,}}, upsert=True)
+						machines.update_one({"machinename": i},
+												{"$set": {"offtimeB": 0,"offtime": 0,"offtimeC": 0,"offtimeA": 0,}}, upsert=True)
+				sessionStartTime = time.time()
 				prevDate = currentDate
 
 			if nofmachines > 0:
@@ -330,7 +344,34 @@ def checkDate():
 					y = y + 1
 					cursorMachine = machines.find_one({"machinename": i})
 					#print("current cursor machine is :", cursorMachine)
-					
+					if   16>currentTime >= 8:
+					 	shiftChangeA = 1
+					 	shiftChangeC = 1
+					 	if shiftChangeB == 1:
+					 		sessionStartTime = time.time()
+					 		shiftChangeB = 0
+					 	offtimeB = sessionRunPercent - (cursorMachine["elapsedTimeB"] + cursorMachine["idleTimeB"] + cursorMachine["problemtimeB"]) 
+					 	machines.update_one({"machinename": i},
+					 								{"$set": {"offtimeB": offtimeB}}, upsert=True)
+					if   24>currentTime >= 16:
+					 	shiftChangeB = 1
+					 	shiftChangeC = 1
+					 	if shiftChangeA == 1:
+					 		sessionStartTime = time.time()
+					 		shiftChangeA = 0
+					 	offtimeA = sessionRunPercent - (cursorMachine["elapsedTimeA"] + cursorMachine["idleTimeA"] + cursorMachine["problemtimeA"]) 
+					 	machines.update_one({"machinename": i},
+					 								{"$set": {"offtimeA": offtimeA}}, upsert=True)
+					if   8>currentTime >= 0:
+					 	shiftChangeA = 1
+					 	shiftChangeB = 1
+					 	if shiftChangeC == 1:
+					 		sessionStartTime = time.time()
+					 		shiftChangeC = 0
+					 	offtimeC = sessionRunPercent - (cursorMachine["elapsedTimeC"] + cursorMachine["idleTimeC"] + cursorMachine["problemtimeC"]) 
+					 	machines.update_one({"machinename": i},
+					 								{"$set": {"offtimeC": offtimeC}}, upsert=True)
+
 					if cursorMachine["machineStaus"] == 1:
 						#starttime =  cursorMachine["startTime"]
 						#if starttime == 0:
