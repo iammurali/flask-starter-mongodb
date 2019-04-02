@@ -132,7 +132,7 @@ def machineOff(machineID):
 		goin = 1
 	else:
 		goin = 1
-		return "machine already off "
+		return "machine already off IN AIDA1"
 	goin = 1
 
 
@@ -303,8 +303,8 @@ def checkDate():
 			global prevTimes
 			global prevDate
 			sessionRunTime = int(time.time() - sessionStartTime)
-			sessionRunMins = sessionRunTime/60
-			sessionRunPercent = round(sessionRunMins *100 / 450)
+			sessionRunMins = sessionRunTime / 60
+			sessionRunPercent = round(sessionRunMins * 100 / 450,2)
 
 			currentDate = datetime.date.today()
 			currentTimes = time.time()
@@ -350,27 +350,27 @@ def checkDate():
 					 	if shiftChangeB == 1:
 					 		sessionStartTime = time.time()
 					 		shiftChangeB = 0
-					 	offtimeB = sessionRunPercent - (cursorMachine["elapsedTimeB"] + cursorMachine["idleTimeB"] + cursorMachine["problemtimeB"]) 
+					 	offtimeB = round(sessionRunPercent - (cursorMachine["elapsedTimeB"] + cursorMachine["idleTimeB"] + cursorMachine["problemtimeB"]),2 )
 					 	machines.update_one({"machinename": i},
-					 								{"$set": {"offtimeB": offtimeB}}, upsert=True)
+					 								{"$set": {"offtimeB": offtimeB,"offtime": offtimeB }}, upsert=True)
 					if   24>currentTime >= 16:
 					 	shiftChangeB = 1
 					 	shiftChangeC = 1
 					 	if shiftChangeA == 1:
 					 		sessionStartTime = time.time()
 					 		shiftChangeA = 0
-					 	offtimeA = sessionRunPercent - (cursorMachine["elapsedTimeA"] + cursorMachine["idleTimeA"] + cursorMachine["problemtimeA"]) 
+					 	offtimeA = round(sessionRunPercent - (cursorMachine["elapsedTimeA"] + cursorMachine["idleTimeA"] + cursorMachine["problemtimeA"]),2) 
 					 	machines.update_one({"machinename": i},
-					 								{"$set": {"offtimeA": offtimeA}}, upsert=True)
+					 								{"$set": {"offtimeA": offtimeA,"offtime": offtimeA }}, upsert=True)
 					if   8>currentTime >= 0:
 					 	shiftChangeA = 1
 					 	shiftChangeB = 1
 					 	if shiftChangeC == 1:
 					 		sessionStartTime = time.time()
 					 		shiftChangeC = 0
-					 	offtimeC = sessionRunPercent - (cursorMachine["elapsedTimeC"] + cursorMachine["idleTimeC"] + cursorMachine["problemtimeC"]) 
+					 	offtimeC = round(sessionRunPercent - (cursorMachine["elapsedTimeC"] + cursorMachine["idleTimeC"] + cursorMachine["problemtimeC"]),2 )
 					 	machines.update_one({"machinename": i},
-					 								{"$set": {"offtimeC": offtimeC}}, upsert=True)
+					 								{"$set": {"offtimeC": offtimeC,"offtime": offtimeC }}, upsert=True)
 
 					if cursorMachine["machineStaus"] == 1:
 						#starttime =  cursorMachine["startTime"]
@@ -394,7 +394,8 @@ def checkDate():
 							#print("runningTime ", runningTime)
 							prevMinute = currentMinute
 						if(presentPercent1[y] != prevPercent1[y]):
-							print(runningTime)
+							print("Session Run Percent" , sessionRunTime)
+							print("Session Run minutes" , sessionRunPercent)
 							print(time_difference_in_minutes)
 							if "elapsedTime" in cursorMachine:
 								if   16>currentTime >= 8:
