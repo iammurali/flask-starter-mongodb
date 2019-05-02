@@ -14,30 +14,8 @@ import threading
 # Configure the connection to the database
 client = MongoClient('localhost', 27017)
 db = client.arduinoDb  # Select the database
+
 prevDate=0
-
-machines = db.machines  # collection for storing list of machines
-machineTimings = db.machineTimingspytho
-app = Flask(__name__)
-app.secret_key = "mys33cret"
-
-goin = 1
-
-# modify=ObjectId()
-#now = datetime.datetime.now(pytz.timezone(TIME_ZONE))
-now=round(time.time(),0)
-cdt =datetime.datetime
-
-nofmachines = db.machines.count()
-print(nofmachines)
-#machinesID = machines.find({},{"machinename":1})
-machinesID = machines.distinct("machinename")
-print(machinesID)
-if nofmachines > 0:
-		for i in machinesID:
-				print("am in")		
-				machines.update_one({"machinename": i},
-								{"$set": {"machineStaus": 0,}}, upsert=True)
 
 currentDate = datetime.date.today()
 prevDate = currentDate
@@ -53,236 +31,91 @@ presentPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 presentPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 serverStart = 1
 sessionRunTime = 0
-fh = open("records.txt", "a")
-		
-def redirect_url():
-	return request.args.get('next') or \
-		request.referrer or \
-		url_for('index')
+goin = 1
 
+app = Flask(__name__)
+
+
+machines = db.list_collection_names()
+nofmachines = len(machines)
+print(nofmachines)
+
+
+machinesID = machines
+print(machinesID)
 
 @app.route("/") #TESTING PART
 def apiWelcome():
-	global goin
-	goin = 0
-	#threadOne.join()
-	global prevDate
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	print(request.remote_addr)
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) +  "Just an empty request" + "\n")
-	goin = 1
-	return "this is api for our aurdino"
-	
-	
-                        #ON REQUEST
+	return "this is api for our arduino"
 
 @app.route("/ON/<machineID>") 
 def machineOn(machineID):
-	global goin
-	goin = 0
-	#threadOne.join()
-	global currentDate
-	global prevPercent1
-	#prevPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-	#presentPercent1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-	print(machineID)	
-	print(prevPercent1)
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	#print(currentTime)
-	orMachine = machines.find_one({"machinename": machineID})
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "ON " + machineID + "\n")
-	#print(currentDate,prevDate)
-	if orMachine["machineStaus"] != 1:
-		machines.update_one({"machinename": machineID}, {
-							"$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
-		goin = 1
-		return "switched on"
+	today = datetime.date.today()
+	machines = db[machineID]
+	currentDoc = machines.find_one({"date":today.strftime("%d/%m/%Y")})
+	if currentDoc["machineStaus"] != 1:
+		machines.update_one({"date":today.strftime("%d/%m/%Y")},{ "$set": {"startTime": time.time(), "machineStaus": 1}}, upsert=True)
+		return("switched on")
 	else:
-		goin = 1
-		return "already on"
-	
+		return("already on")
 
-                         #OFF REQUEST
-
-@app.route("/OFF/<machineID>")
+@app.route("/OFF/<machineID>") 
 def machineOff(machineID):
-	global goin
-	global prevPercent1
-	goin = 0
-	#threadOne.join()
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	#print(currentTime)
-	#print(currentDate,prevDate)
-	cursorMachine = machines.find_one({"machinename": machineID})
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "OFF " + machineID + "\n")
-	if cursorMachine["machineStaus"] != 0:
-		machines.update_one({"machinename": machineID}, {
-							"$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
-		print(machinesID.index(machineID))
-		prevPercent1[machinesID.index(machineID) + 1] = 0
-		print(prevPercent1)
-	
-	
-		goin = 1
+	today = datetime.date.today()
+	machines = db[machineID]
+	currentDoc = machines.find_one({"date":today.strftime("%d/%m/%Y")})
+	if currentDoc["machineStaus"] != 0:
+		machines.update_one({"date":today.strftime("%d/%m/%Y")},{ "$set": {"stopTime": time.time(), "machineStaus": 0}}, upsert=True)
+		return("switched off")
 	else:
-		goin = 1
-		return "machine already off IN AIDA1"
-	goin = 1
-
-
-
-                    #PROBLEM REQUEST
+		return("already off")
 
 
 @app.route("/PROBLEM/<machineID>") 
 def machineProblem(machineID):
-	global goin
-	goin = 0
-	#threadOne.join()
-	global prevPercent2
-	#prevPercent2 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": machineID})
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "PROBLEM " + machineID + "\n")
-	if orMachine["machineStaus"] != 3:
-	    machines.update_one({"machinename": machineID},
-						{"$set": {"problemstartTime": time.time(),"machineStaus":3}}, upsert=True)
-	print("machine data recieved")
-	goin = 1
-	return "machine problem"
-	
-
-
-                        #PROBLEM SOLVED REQUEST
-
-
-@app.route("/PROBLEMSOLVED/<machineID>") 
-def machineProblemSolved(machineID):
-	global goin
-	global prevPercent2
-	goin = 0
-	#threadOne.join()
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	#print(currentDate,prevDate)
-	cursorMachine = machines.find_one({"machinename": machineID})
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "PROBLEMOFF " + machineID + "\n")
-	if cursorMachine["machineStaus"] != 2:
-		machines.update_one({"machinename": machineID}, {
-                            "$set": {"problemstopTime": time.time(), "machineStaus": 2}}, upsert=True)
-		print(machinesID.index(machineID))
-		prevPercent2[machinesID.index(machineID) + 1] = 0
-		print(prevPercent2)
-		
-		goin = 1	
+	today = datetime.date.today()
+	machines = db[machineID]
+	currentDoc = machines.find_one({"date":today.strftime("%d/%m/%Y")})
+	if currentDoc["machineStaus"] != 3:
+		machines.update_one({"date":today.strftime("%d/%m/%Y")},{ "$set": {"problemstartTime": time.time(), "machineStaus": 3}}, upsert=True)
+		return("problem")
 	else:
-		goin = 1
-		return "there is an error"
-	
+		return("already problem")
 
 
-
-                        #IDLE REQUEST
-
-@app.route("/IDLE/<machineID>")
+@app.route("/IDLE/<machineID>") 
 def machineIdle(machineID):
-	global goin
-	goin = 0
-	#threadOne.join()
-	global prevPercent3
-	#prevPercent3 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	orMachine = machines.find_one({"machinename": machineID})
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "IDLE " + machineID + "\n")
-	#print(currentDate,prevDate)
-	if orMachine["machineStaus"] != 4:
-	    machines.update_one({"machinename": machineID}, {
-						"$set": {"machineStaus":4, "idleStart": time.time()}}, upsert=True)
-	print("machine data recieved IN AIDA1")
-	goin = 1
-	return "Machine idle"
-	
+	today = datetime.date.today()
+	machines = db[machineID]
+	currentDoc = machines.find_one({"date":today.strftime("%d/%m/%Y")})
+	if currentDoc["machineStaus"] != 4:
+		machines.update_one({"date":today.strftime("%d/%m/%Y")},{ "$set": {"problemstartTime": time.time(), "machineStaus": 4}}, upsert=True)
+		return("Idle")
+	else:
+		return("already idle")
 
-
-
-
-                   ##IDLEOFF REQUEST
-
-@app.route("/IDLEOFF/<machineID>")
-def machineIdleoff(machineID):
-	global goin
-	global prevPercent3
-	goin = 0
-	#threadOne.join()
-	currentTime = datetime.datetime.now()
-	currentTime = int(currentTime.strftime("%H"))
-	print(currentTime)
-	cursorMachine = machines.find_one({"machinename": machineID})
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "IDLEOFF " + machineID + "\n")
-	if cursorMachine["machineStaus"] != 5:
-		machines.update_one({"machinename": machineID}, {
-						"$set": {"machineStaus":5, "idleStop":time.time()}}, upsert=True)
-		print(machinesID.index(machineID))
-		prevPercent3[machinesID.index(machineID) + 1] = 0
-		print(prevPercent3)
-		
-	goin = 1
-
-
-                       ##create machines from database##
+					   ##create machines from database##
 @app.route("/createmachine/<machineID>")
 def createmachine(machineID):
-	global goin
-	goin = 0
-	#threadOne.join()
-	global nofmachines
-	global machinesID
-	currentTime = datetime.datetime.now()
-	currentTime = currentTime.strftime("%H")
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + "machine created " + machineID + "\n")
-	print(currentTime)
-	print("machine created")
-	hello = machines.insert_one({"machinename": machineID, "machineStaus": 0,
+	if machineID not in db.list_collection_names():
+		machines = db[machineID]
+		today = datetime.date.today()
+		machine = machines.insert_one({"_id":today.strftime("%d/%m/%Y") ,"machinename": machineID, "date":today.strftime("%d/%m/%Y"), "machineStaus": 0,
 								 "totalTimeOn": 0, "elapsedTime": 0,"idleTime": 0,"problemtime": 0, "offtime": 0, "elapsedTimeB": 0, "problemtimeB": 0, "idleTimeB": 0, "offtimeB": 0, "elapsedTimeA": 0, "problemtimeA": 0, "idleTimeA": 0, "offtimeA": 0, "elapsedTimeC": 0, "problemtimeC": 0, "idleTimeC": 0, "offtimeC":0})
-	print(hello.inserted_id)
-	time.sleep(5)
-	nofmachines = nofmachines + 1
-	machinesID.append(machineID)
-	print(nofmachines)
-	print(machinesID)
-	goin = 1
-	return "machine created"
-	
-
-                    ##get data from app##
+		return "machine created"
+	else:
+		return "machine already available"
 
 @app.route("/mob/getmachines")
 def getmachinesfn():
+	data = []
 	print("machine data recieved")
-	fh = open("records.txt", "a")
-	fh.writelines(str(datetime.datetime.now()) + " got machine data in mobile" + "\n")
-	machine = machines.find()
-	return dumps(machine)
-
+	for x in machines:
+		machineData = db[x]
+		data.append(machineData.find_one())
+	return dumps(data)
 
 def checkDate():
-	global goin
 	global serverStart
 	#time.sleep(1)
 	global prevPercent1, prevPercent2, prevPercent3
@@ -321,15 +154,12 @@ def checkDate():
 			if(currentDate != prevDate):
 				if nofmachines > 0:
 					for i in machinesID:
-						print("am in")		
-						machines.update_one({"machinename": i},
-												{"$set": {"elapsedTimeB": 0,"elapsedTime": 0,"elapsedTimeC": 0,"elapsedTimeA": 0,}}, upsert=True)
-						machines.update_one({"machinename": i},
-												{"$set": {"idleTimeB": 0,"idleTime": 0,"idleTimeC": 0,"idleTimeA": 0,}}, upsert=True)
-						machines.update_one({"machinename": i},
-												{"$set": {"problemtimeB": 0,"problemtime": 0,"problemtimeC": 0,"problemtimeA": 0,}}, upsert=True)
-						machines.update_one({"machinename": i},
-												{"$set": {"offtimeB": 0,"offtime": 0,"offtimeC": 0,"offtimeA": 0,}}, upsert=True)
+						machines = db[i]
+						print("am in")
+						today = datetime.date.today()
+						machine = machines.insert_one({"_id":today.strftime("%d/%m/%Y") ,"machinename": i, "date":today.strftime("%d/%m/%Y"), "machineStaus": 0,
+								 "totalTimeOn": 0, "elapsedTime": 0,"idleTime": 0,"problemtime": 0, "offtime": 0, "elapsedTimeB": 0, "problemtimeB": 0, "idleTimeB": 0, "offtimeB": 0, "elapsedTimeA": 0, "problemtimeA": 0, "idleTimeA": 0, "offtimeA": 0, "elapsedTimeC": 0, "problemtimeC": 0, "idleTimeC": 0, "offtimeC":0})
+		
 				sessionStartTime = time.time()
 				prevDate = currentDate
 
@@ -342,7 +172,10 @@ def checkDate():
 				
 				for i in machinesID:
 					y = y + 1
-					cursorMachine = machines.find_one({"machinename": i})
+					today = datetime.date.today()
+					machines = db[i]
+					#print(machines)
+					cursorMachine = machines.find_one({"_id":today.strftime("%d/%m/%Y")})
 					#print("current cursor machine is :", cursorMachine)
 					if   16>currentTime >= 8:
 					 	shiftChangeA = 1
@@ -351,7 +184,7 @@ def checkDate():
 					 		sessionStartTime = time.time()
 					 		shiftChangeB = 0
 					 	offtimeB = round(sessionRunPercent - (cursorMachine["elapsedTimeB"] + cursorMachine["idleTimeB"] + cursorMachine["problemtimeB"]),2 )
-					 	machines.update_one({"machinename": i},
+					 	machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 					 								{"$set": {"offtimeB": offtimeB,"offtime": offtimeB }}, upsert=True)
 					if   24>currentTime >= 16:
 					 	shiftChangeB = 1
@@ -360,7 +193,7 @@ def checkDate():
 					 		sessionStartTime = time.time()
 					 		shiftChangeA = 0
 					 	offtimeA = round(sessionRunPercent - (cursorMachine["elapsedTimeA"] + cursorMachine["idleTimeA"] + cursorMachine["problemtimeA"]),2) 
-					 	machines.update_one({"machinename": i},
+					 	machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 					 								{"$set": {"offtimeA": offtimeA,"offtime": offtimeA }}, upsert=True)
 					if   8>currentTime >= 0:
 					 	shiftChangeA = 1
@@ -369,7 +202,7 @@ def checkDate():
 					 		sessionStartTime = time.time()
 					 		shiftChangeC = 0
 					 	offtimeC = round(sessionRunPercent - (cursorMachine["elapsedTimeC"] + cursorMachine["idleTimeC"] + cursorMachine["problemtimeC"]),2 )
-					 	machines.update_one({"machinename": i},
+					 	machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 					 								{"$set": {"offtimeC": offtimeC,"offtime": offtimeC }}, upsert=True)
 
 					if cursorMachine["machineStaus"] == 1:
@@ -411,7 +244,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"elapsedTimeB": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
 								elif   24>currentTime >= 16:
 									#print("elapsedTimeA :", cursorMachine["elapsedTimeA"] )
@@ -426,7 +259,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print("elapsedtime:", elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"elapsedTimeA": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
 								elif   8>currentTime >= 0:
 									#print("elapsedTimeC :", cursorMachine["elapsedTimeC"] )
@@ -441,7 +274,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"elapsedTimeC": elapsedTime,"elapsedTime": elapsedTime}}, upsert=True)
 							#print(elapsedTime , presentPercent1[y], prevPercent1[y], "hello" ,  time_difference_in_percent1 )
 							prevPercent1[y] = time_difference_in_percent1
@@ -473,7 +306,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"problemtimeB": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
 								if   24>currentTime >= 16:
 									if serverStart:
@@ -487,7 +320,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"problemtimeA": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
 								if   8>currentTime >= 0:
 									if serverStart:
@@ -501,7 +334,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"problemtimeC": elapsedTime,"problemtime": elapsedTime}}, upsert=True)
 						prevPercent2[y] = time_difference_in_percent2
 
@@ -531,7 +364,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"idleTimeB": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
 								if   24>currentTime >= 16:
 									if serverStart:
@@ -545,7 +378,7 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"idleTimeA": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
 								if   8>currentTime >= 0:
 									if serverStart:
@@ -559,16 +392,14 @@ def checkDate():
 									if elapsedTime < 0:
 										elapsedTime = 0
 									#print(elapsedTime)
-									machines.update_one({"machinename": i},
+									machines.update_one({"_id":today.strftime("%d/%m/%Y")},
 													{"$set": {"idleTimeC": elapsedTime,"idleTime": elapsedTime}}, upsert=True)
 						prevPercent3[y] = time_difference_in_percent3
 				serverStart = 0
 
-
 threadOne = threading.Thread(target=checkDate)
 threadOne.start()
 
-app.run(host='0.0.0.0', port=8081)
-	
-# Careful with the debug mode..
+app.run(host='0.0.0.0', port=5000)
+
 
