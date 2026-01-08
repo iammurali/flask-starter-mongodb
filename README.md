@@ -1,4 +1,4 @@
-##Production Monitoring for Manufacturers
+## Production Monitoring for Manufacturers
 
 This application invloves real-time observation, tracking, and analysis of manufacturing processes to improve efficiency, quality, and productivity by identifying downtime using automated data collection from machines, sensors, and systems, moving beyond traditional manual methods for faster, more accurate decision-making.
 
