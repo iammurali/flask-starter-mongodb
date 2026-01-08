@@ -37,4 +37,4 @@ This application invloves real-time observation, tracking, and analysis of manuf
 
 ## Screenshot
 
-![](IMG-20190323-WA0001.jpg) ![](IMG-20190110-WA0001.jpg)
+![](IMG-20190323-WA0001.jpg)
